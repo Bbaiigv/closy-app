@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -13,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useAppContext } from '@/contexts/AppContext';
+import { useAlert } from '@/hooks/useAlert';
 
 interface StyleQuestion {
   id: number;
@@ -94,6 +94,7 @@ const responseOptions = [
 export default function QuestionnaireBlock1Screen() {
   const router = useRouter();
   const { state, dispatch } = useAppContext();
+  const { showAlert } = useAlert();
   
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
@@ -101,6 +102,7 @@ export default function QuestionnaireBlock1Screen() {
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedResponse, setSelectedResponse] = useState<number | null>(null);
+  const [showDebugScores, setShowDebugScores] = useState(false);
 
   const currentQuestion = styleQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === styleQuestions.length - 1;
@@ -109,9 +111,21 @@ export default function QuestionnaireBlock1Screen() {
     setSelectedResponse(responseValue);
   };
 
+  const getTopStylesText = () => {
+    const topStyles = state.styleScores
+      .filter(style => style.averageScore >= 3)
+      .slice(0, 3);
+    
+    if (topStyles.length === 0) return 'Aún no tienes estilos favoritos claros.';
+    
+    return `Tus estilos favoritos son:\n${topStyles.map((style, index) => 
+      `${index + 1}. ${style.styleName} (${style.averageScore}/5 ⭐)`
+    ).join('\n')}`;
+  };
+
   const handleNext = (): void => {
     if (selectedResponse === null) {
-      Alert.alert('Selecciona una opción', 'Por favor, elige una respuesta antes de continuar.');
+      showAlert('Selecciona una opción', 'Por favor, elige una respuesta antes de continuar.');
       return;
     }
 
@@ -129,9 +143,11 @@ export default function QuestionnaireBlock1Screen() {
       // Marcar onboarding como completado
       dispatch({ type: 'COMPLETE_ONBOARDING' });
       
-      Alert.alert(
+      const topStylesMessage = getTopStylesText();
+      
+      showAlert(
         'Bloque 1 Completado',
-        '¡Has completado el primer bloque del cuestionario! Tu perfil de estilo está listo.',
+        `¡Has completado el primer bloque del cuestionario! Tu perfil de estilo está listo.\n\n${topStylesMessage}`,
         [
           {
             text: 'Ver mi perfil',
@@ -166,6 +182,30 @@ export default function QuestionnaireBlock1Screen() {
     return null;
   }
 
+  const renderDebugScores = () => {
+    if (!showDebugScores) return null;
+    
+    return (
+      <View style={styles.debugContainer}>
+        <Text style={styles.debugTitle}>🎯 Puntuaciones Actuales</Text>
+        {state.styleScores.length === 0 ? (
+          <Text style={styles.debugText}>No hay puntuaciones aún</Text>
+        ) : (
+          state.styleScores.map((style, index) => (
+            <View key={style.styleName} style={styles.debugRow}>
+              <Text style={styles.debugText}>
+                {index + 1}. {style.styleName}: {style.averageScore}/5 ⭐
+              </Text>
+              <Text style={styles.debugSubText}>
+                Total: {style.totalScore} | Respuestas: {style.responseCount}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" backgroundColor="#FCF6F3" />
@@ -179,7 +219,18 @@ export default function QuestionnaireBlock1Screen() {
         <Text style={styles.progressText}>
           {currentQuestionIndex + 1} de {styleQuestions.length}
         </Text>
+        
+        {/* Botón debug */}
+        <TouchableOpacity 
+          style={styles.debugButton} 
+          onPress={() => setShowDebugScores(!showDebugScores)}
+        >
+          <Text style={styles.debugButtonText}>📊</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Debug scores */}
+      {renderDebugScores()}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
         {/* Imagen del estilo */}
@@ -370,5 +421,59 @@ const styles = StyleSheet.create({
   },
   nextButtonTextDisabled: {
     color: '#999',
+  },
+  debugContainer: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    padding: 15,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  debugTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#7A142C',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#7A142C',
+    fontWeight: '500',
+  },
+  debugRow: {
+    marginBottom: 8,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  debugSubText: {
+    fontSize: 12,
+    color: '#4D6F62',
+    marginTop: 2,
+  },
+  debugButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  debugButtonText: {
+    fontSize: 18,
   },
 }); 

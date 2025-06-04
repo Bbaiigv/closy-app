@@ -45,14 +45,11 @@ npx expo start
 # Desarrollo general
 npx expo start
 
-# Para Android
-npx expo start --android
+# Para correrlo sin caché
+npx expo start --clear
 
-# Para iOS
-npx expo start --ios
-
-# Para web
-npx expo start --web
+# Para correrlo desde WSL2 (para conecrtarlo con el iphone) y sin caché
+npx expo start --tunnel --clear
 ```
 
 ## 📱 **Flujo de la Aplicación**

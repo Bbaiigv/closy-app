@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useAppContext } from '@/contexts/AppContext';
+import { useAlert } from '@/hooks/useAlert';
 
 interface FormData {
   name: string;
@@ -36,6 +36,7 @@ interface FormErrors {
 export default function RegisterScreen() {
   const router = useRouter();
   const { dispatch } = useAppContext();
+  const { showAlert } = useAlert();
   
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
@@ -111,7 +112,7 @@ export default function RegisterScreen() {
         },
       });
 
-      Alert.alert(
+      showAlert(
         'Registro exitoso',
         'Tu cuenta ha sido creada correctamente',
         [

@@ -15,9 +15,17 @@ export interface QuestionnaireResponse {
   styleName: string;
 }
 
+export interface StyleScore {
+  styleName: string;
+  totalScore: number;
+  responseCount: number;
+  averageScore: number;
+}
+
 export interface AppState {
   user: User | null;
   questionnaireResponses: QuestionnaireResponse[];
+  styleScores: StyleScore[];
   currentQuestionnaireBlock: number;
   isOnboardingCompleted: boolean;
 }
@@ -29,6 +37,7 @@ type AppAction =
   | { type: 'LOGOUT_USER' }
   | { type: 'ADD_QUESTIONNAIRE_RESPONSE'; payload: QuestionnaireResponse }
   | { type: 'SET_QUESTIONNAIRE_RESPONSES'; payload: QuestionnaireResponse[] }
+  | { type: 'UPDATE_STYLE_SCORES'; payload: StyleScore[] }
   | { type: 'SET_CURRENT_BLOCK'; payload: number }
   | { type: 'COMPLETE_ONBOARDING' }
   | { type: 'RESET_APP' };
@@ -37,8 +46,29 @@ type AppAction =
 const initialState: AppState = {
   user: null,
   questionnaireResponses: [],
+  styleScores: [],
   currentQuestionnaireBlock: 1,
   isOnboardingCompleted: false,
+};
+
+// Función para calcular puntuaciones por estilo
+const calculateStyleScores = (responses: QuestionnaireResponse[]): StyleScore[] => {
+  const scoreMap = new Map<string, { total: number; count: number }>();
+  
+  responses.forEach(response => {
+    const current = scoreMap.get(response.styleName) || { total: 0, count: 0 };
+    scoreMap.set(response.styleName, {
+      total: current.total + response.response,
+      count: current.count + 1
+    });
+  });
+  
+  return Array.from(scoreMap.entries()).map(([styleName, { total, count }]) => ({
+    styleName,
+    totalScore: total,
+    responseCount: count,
+    averageScore: Number((total / count).toFixed(2))
+  })).sort((a, b) => b.averageScore - a.averageScore);
 };
 
 // Reducer
@@ -67,26 +97,37 @@ function appReducer(state: AppState, action: AppAction): AppState {
         r => r.questionId === action.payload.questionId
       );
       
+      let updatedResponses: QuestionnaireResponse[];
       if (existingIndex >= 0) {
         // Actualizar respuesta existente
-        const updatedResponses = [...state.questionnaireResponses];
+        updatedResponses = [...state.questionnaireResponses];
         updatedResponses[existingIndex] = action.payload;
-        return {
-          ...state,
-          questionnaireResponses: updatedResponses,
-        };
       } else {
         // Agregar nueva respuesta
-        return {
-          ...state,
-          questionnaireResponses: [...state.questionnaireResponses, action.payload],
-        };
+        updatedResponses = [...state.questionnaireResponses, action.payload];
       }
+      
+      // Calcular las puntuaciones actualizadas
+      const updatedStyleScores = calculateStyleScores(updatedResponses);
+      
+      return {
+        ...state,
+        questionnaireResponses: updatedResponses,
+        styleScores: updatedStyleScores,
+      };
     
     case 'SET_QUESTIONNAIRE_RESPONSES':
+      const newStyleScores = calculateStyleScores(action.payload);
       return {
         ...state,
         questionnaireResponses: action.payload,
+        styleScores: newStyleScores,
+      };
+    
+    case 'UPDATE_STYLE_SCORES':
+      return {
+        ...state,
+        styleScores: action.payload,
       };
     
     case 'SET_CURRENT_BLOCK':
@@ -137,4 +178,19 @@ export function useAppContext() {
     throw new Error('useAppContext debe ser usado dentro de AppProvider');
   }
   return context;
-} 
+}
+
+// Funciones helper para trabajar con puntuaciones
+export const getTopStyles = (styleScores: StyleScore[], minScore: number = 3, limit: number = 5): StyleScore[] => {
+  return styleScores
+    .filter(style => style.averageScore >= minScore)
+    .slice(0, limit);
+};
+
+export const getStyleByName = (styleScores: StyleScore[], styleName: string): StyleScore | undefined => {
+  return styleScores.find(style => style.styleName === styleName);
+};
+
+export const getStyleRanking = (styleScores: StyleScore[]): StyleScore[] => {
+  return [...styleScores].sort((a, b) => b.averageScore - a.averageScore);
+}; 

@@ -2,6 +2,11 @@ import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-nati
 import { useFonts } from 'expo-font';
 import { useAppContext } from '@/contexts/AppContext';
 import { useRouter } from 'expo-router';
+import { 
+  categorizeStylesByPreference, 
+  getScoreStatistics,
+  generateNextBlockRecommendations 
+} from '@/utils/styleScoring';
 
 export default function HomeScreen() {
   const { state } = useAppContext();
@@ -15,14 +20,27 @@ export default function HomeScreen() {
     return null;
   }
 
-  const getTopStyles = () => {
-    return state.questionnaireResponses
-      .filter(response => response.response >= 4) // Solo respuestas de 4 o 5
-      .sort((a, b) => b.response - a.response)
-      .slice(0, 3);
-  };
+  const styleCategories = categorizeStylesByPreference(state.styleScores);
+  const statistics = getScoreStatistics(state.styleScores);
+  const recommendations = generateNextBlockRecommendations(state.styleScores);
 
-  const topStyles = getTopStyles();
+  const renderStyleCategory = (title: string, styleList: any[], emoji: string, color: string) => {
+    if (styleList.length === 0) return null;
+    
+    return (
+      <View style={[styles.categoryContainer, { borderLeftColor: color }]}>
+        <Text style={styles.categoryTitle}>{emoji} {title}</Text>
+        {styleList.slice(0, 3).map((style, index) => (
+          <Text key={style.styleName} style={styles.styleItem}>
+            • {style.styleName} ({style.averageScore}/5 ⭐)
+          </Text>
+        ))}
+        {styleList.length > 3 && (
+          <Text style={styles.moreText}>+{styleList.length - 3} más...</Text>
+        )}
+      </View>
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -33,41 +51,77 @@ export default function HomeScreen() {
         <Text style={styles.subtitleText}>Tu estilo único te está esperando</Text>
       </View>
 
-      {state.isOnboardingCompleted && topStyles.length > 0 ? (
-        <View style={styles.styleSection}>
-          <Text style={styles.sectionTitle}>Tus estilos favoritos</Text>
-          {topStyles.map((style) => (
-            <View key={style.questionId} style={styles.styleCard}>
-              <Text style={styles.styleName}>{style.styleName}</Text>
-              <Text style={styles.styleRating}>
-                {'❤️'.repeat(style.response)}
+      {state.styleScores.length > 0 ? (
+        <>
+          {/* Estadísticas generales */}
+          <View style={styles.statsContainer}>
+            <Text style={styles.sectionTitle}>📊 Tu Perfil de Estilo</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{statistics.totalStyles}</Text>
+                <Text style={styles.statLabel}>Estilos evaluados</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{statistics.averageScore}</Text>
+                <Text style={styles.statLabel}>Puntuación promedio</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{statistics.totalResponses}</Text>
+                <Text style={styles.statLabel}>Respuestas totales</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Categorías de estilos */}
+          <View style={styles.preferencesContainer}>
+            <Text style={styles.sectionTitle}>💖 Tus Preferencias</Text>
+            {renderStyleCategory('Me encanta', styleCategories.loved, '😍', '#FF6B9D')}
+            {renderStyleCategory('Me gusta mucho', styleCategories.liked, '😊', '#4ECDC4')}
+            {renderStyleCategory('Me gusta', styleCategories.neutral, '🙂', '#45B7D1')}
+            {renderStyleCategory('No me convence', styleCategories.disliked, '😐', '#96CEB4')}
+          </View>
+
+          {/* Recomendaciones */}
+          {recommendations.recommendedStyles.length > 0 && (
+            <View style={styles.recommendationsContainer}>
+              <Text style={styles.sectionTitle}>🎯 Recomendación Personal</Text>
+              <Text style={styles.recommendationText}>
+                {recommendations.recommendation}
               </Text>
             </View>
-          ))}
-        </View>
+          )}
+        </>
       ) : (
-        <View style={styles.noDataSection}>
-          <Text style={styles.noDataText}>
-            ¡Completa tu cuestionario para descubrir tu estilo único!
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>¡Comienza tu viaje de estilo! ✨</Text>
+          <Text style={styles.emptyText}>
+            Completa el cuestionario para descubrir tu perfil de estilo único
           </Text>
           <TouchableOpacity 
-            style={styles.ctaButton}
-            onPress={() => router.push('/discover-style')}
+            style={styles.startButton}
+            onPress={() => router.push('/questionnaire-block1')}
           >
-            <Text style={styles.ctaButtonText}>Comenzar cuestionario</Text>
+            <Text style={styles.startButtonText}>Comenzar Cuestionario</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <View style={styles.actionsSection}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>Explorar nuevos looks</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>Mi guardarropa</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Botón para próximo bloque si está disponible */}
+      {state.styleScores.length > 0 && (
+        <View style={styles.actionContainer}>
+          <TouchableOpacity 
+            style={styles.nextBlockButton}
+            onPress={() => {
+              router.push('/questionnaire-block2');
+            }}
+          >
+            <Text style={styles.nextBlockButtonText}>Continuar al Siguiente Bloque</Text>
+            <Text style={styles.nextBlockSubtext}>
+              Exploraremos {recommendations.recommendedStyles.length} estilos seleccionados para ti
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -86,99 +140,163 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Castio-Regular',
     color: '#7A142C',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 8,
   },
   subtitleText: {
     fontSize: 16,
-    color: '#666',
+    color: '#4D6F62',
     textAlign: 'center',
   },
-  styleSection: {
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#7A142C',
+    marginBottom: 15,
+  },
+  statsContainer: {
     margin: 20,
     padding: 20,
     backgroundColor: '#fff',
     borderRadius: 15,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontFamily: 'Castio-Regular',
-    color: '#7A142C',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  styleCard: {
+  statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginVertical: 4,
-    backgroundColor: '#FAA6B5',
-    borderRadius: 10,
+    justifyContent: 'space-around',
   },
-  styleName: {
+  statBox: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#7A142C',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#4D6F62',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  preferencesContainer: {
+    margin: 20,
+    marginTop: 0,
+  },
+  categoryContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  categoryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#7A142C',
+    marginBottom: 8,
   },
-  styleRating: {
-    fontSize: 18,
+  styleItem: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
   },
-  noDataSection: {
+  moreText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  recommendationsContainer: {
     margin: 20,
-    padding: 30,
+    marginTop: 0,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#FAA6B5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recommendationText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  emptyState: {
+    margin: 20,
+    padding: 40,
     backgroundColor: '#fff',
     borderRadius: 15,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  noDataText: {
+  emptyTitle: {
+    fontSize: 22,
+    fontFamily: 'Castio-Regular',
+    color: '#7A142C',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: '#4D6F62',
     textAlign: 'center',
     marginBottom: 20,
-    lineHeight: 22,
   },
-  ctaButton: {
+  startButton: {
     backgroundColor: '#FAA6B5',
-    paddingVertical: 15,
     paddingHorizontal: 30,
+    paddingVertical: 15,
     borderRadius: 25,
   },
-  ctaButtonText: {
-    color: '#fff',
+  startButtonText: {
+    color: '#7A142C',
     fontSize: 16,
     fontWeight: '600',
   },
-  actionsSection: {
+  actionContainer: {
     margin: 20,
-    gap: 15,
+    marginTop: 0,
   },
-  actionButton: {
+  nextBlockButton: {
     backgroundColor: '#4D6F62',
-    paddingVertical: 18,
+    padding: 20,
     borderRadius: 15,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  nextBlockButtonText: {
+    color: '#FCF6F3',
+    fontSize: 18,
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  nextBlockSubtext: {
+    color: '#FCF6F3',
+    fontSize: 14,
+    opacity: 0.9,
+    textAlign: 'center',
   },
 });

@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -15,10 +14,12 @@ import {
     View,
 } from 'react-native';
 import { useAppContext } from '@/contexts/AppContext';
+import { useAlert } from '@/hooks/useAlert';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { state, dispatch } = useAppContext();
+  const { showAlert } = useAlert();
   
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
@@ -62,7 +63,7 @@ export default function LoginScreen() {
         payload: { email: formData.email },
       });
 
-      Alert.alert(
+      showAlert(
         'Inicio de sesión exitoso',
         'Bienvenida a Closy',
         [

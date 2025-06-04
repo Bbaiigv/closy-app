@@ -49,6 +49,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="discover-style" />
           <Stack.Screen name="questionnaire-block1" />
+          <Stack.Screen name="questionnaire-block2" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="+not-found" />
         </Stack>
