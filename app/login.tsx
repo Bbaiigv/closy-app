@@ -14,9 +14,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useAppContext } from '@/contexts/AppContext';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { state, dispatch } = useAppContext();
   
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
@@ -55,13 +57,24 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (validateForm()) {
+      dispatch({
+        type: 'LOGIN_USER',
+        payload: { email: formData.email },
+      });
+
       Alert.alert(
         'Inicio de sesión exitoso',
         'Bienvenida a Closy',
         [
           {
             text: 'OK',
-            onPress: () => router.back(),
+            onPress: () => {
+              if (state.isOnboardingCompleted) {
+                router.push('/(tabs)');
+              } else {
+                router.push('/discover-style');
+              }
+            },
           },
         ]
       );

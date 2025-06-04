@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AppProvider } from '@/contexts/AppContext';
 
 // Tema personalizado con fondo rosa
 const CustomTheme = {
@@ -36,20 +37,23 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomTheme}>
-      <Stack screenOptions={{ 
-        headerShown: false,
-        contentStyle: { backgroundColor: '#FAA6B5' }
-      }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="welcome" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="discover-style" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AppProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomTheme}>
+        <Stack screenOptions={{ 
+          headerShown: false,
+          contentStyle: { backgroundColor: '#FAA6B5' }
+        }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="discover-style" />
+          <Stack.Screen name="questionnaire-block1" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AppProvider>
   );
 }

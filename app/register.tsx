@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAppContext } from '@/contexts/AppContext';
 
 interface FormData {
   name: string;
@@ -34,6 +35,7 @@ interface FormErrors {
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { dispatch } = useAppContext();
   
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
@@ -97,6 +99,18 @@ export default function RegisterScreen() {
 
   const handleRegister = (): void => {
     if (validateForm()) {
+      // Guardar usuario en el contexto global
+      dispatch({
+        type: 'SET_USER',
+        payload: {
+          name: formData.name,
+          email: formData.email,
+          province: formData.province,
+          age: formData.age,
+          isLoggedIn: true,
+        },
+      });
+
       Alert.alert(
         'Registro exitoso',
         'Tu cuenta ha sido creada correctamente',

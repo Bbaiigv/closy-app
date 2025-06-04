@@ -12,16 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAppContext } from '@/contexts/AppContext';
 
 interface StyleQuestion {
   id: number;
   styleName: string;
   imagePath: any;
-}
-
-interface QuestionnaireResponse {
-  questionId: number;
-  response: number; // 1-5 (No me gusta nada - Me encanta)
 }
 
 const { width, height } = Dimensions.get('window');
@@ -97,13 +93,13 @@ const responseOptions = [
 
 export default function QuestionnaireBlock1Screen() {
   const router = useRouter();
+  const { state, dispatch } = useAppContext();
   
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
   });
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
   const [selectedResponse, setSelectedResponse] = useState<number | null>(null);
 
   const currentQuestion = styleQuestions[currentQuestionIndex];
@@ -119,29 +115,28 @@ export default function QuestionnaireBlock1Screen() {
       return;
     }
 
-    // Guardar la respuesta
-    const newResponse: QuestionnaireResponse = {
-      questionId: currentQuestion.id,
-      response: selectedResponse,
-    };
-
-    const updatedResponses = responses.filter(r => r.questionId !== currentQuestion.id);
-    updatedResponses.push(newResponse);
-    setResponses(updatedResponses);
+    // Guardar la respuesta en el contexto global
+    dispatch({
+      type: 'ADD_QUESTIONNAIRE_RESPONSE',
+      payload: {
+        questionId: currentQuestion.id,
+        response: selectedResponse,
+        styleName: currentQuestion.styleName,
+      },
+    });
 
     if (isLastQuestion) {
-      // Finalizar bloque 1
+      // Marcar onboarding como completado
+      dispatch({ type: 'COMPLETE_ONBOARDING' });
+      
       Alert.alert(
         'Bloque 1 Completado',
-        '¡Has completado el primer bloque del cuestionario!',
+        '¡Has completado el primer bloque del cuestionario! Tu perfil de estilo está listo.',
         [
           {
-            text: 'Continuar',
+            text: 'Ver mi perfil',
             onPress: () => {
-              // Aquí podrías navegar al siguiente bloque o guardar los datos
-              console.log('Respuestas del Bloque 1:', updatedResponses);
-              // Por ahora volvemos a discover-style
-              router.back();
+              router.push('/(tabs)');
             },
           },
         ]
@@ -157,7 +152,10 @@ export default function QuestionnaireBlock1Screen() {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       // Recuperar la respuesta anterior si existe
-      const previousResponse = responses.find(r => r.questionId === styleQuestions[currentQuestionIndex - 1].id);
+      const previousQuestion = styleQuestions[currentQuestionIndex - 1];
+      const previousResponse = state.questionnaireResponses.find(
+        r => r.questionId === previousQuestion.id
+      );
       setSelectedResponse(previousResponse?.response || null);
     } else {
       router.back();

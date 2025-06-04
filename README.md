@@ -1,50 +1,172 @@
-# Welcome to your Expo app 👋
+# 🌸 Closy - Tu Estilo Personal AI
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **Descubre el estilo que te hace única**
 
-## Get started
+Closy es una aplicación móvil inteligente que te ayuda a descubrir y desarrollar tu estilo personal único a través de un sistema de cuestionarios personalizados y recomendaciones de moda.
 
-1. Install dependencies
+## ✨ **¿Qué hace Closy?**
 
-   ```bash
-   npm install
-   ```
+🎯 **Descubrimiento de estilo personal** - Cuestionarios inteligentes que analizan tus preferencias  
+👗 **Recomendaciones personalizadas** - Suggestions basadas en tu perfil único  
+💖 **Experiencia personalizada** - Todo adaptado a tu personalidad y gustos  
+📱 **Interfaz moderna** - Diseño intuitivo y atractivo con animaciones fluidas  
 
-2. Start the app
+## 🏗️ **Arquitectura Técnica**
 
-   ```bash
-   npx expo start
-   ```
+- **Frontend:** React Native + Expo SDK 53
+- **Navegación:** Expo Router (file-based routing)
+- **Estado:** Context API con useReducer
+- **Animaciones:** React Native Reanimated 3
+- **Tipado:** TypeScript
+- **Multimedia:** Expo AV para videos
 
-In the output, you'll find options to open the app in a
+## 🚀 **Instalación y Ejecución**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### **Requisitos previos**
+- Node.js (v18 o superior)
+- Expo CLI
+- Dispositivo móvil con Expo Go o emulador
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### **Instalación**
 ```bash
-npm run reset-project
+# Clonar el repositorio
+git clone <tu-repo>
+cd closy-app
+
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### **Opciones de ejecución**
+```bash
+# Desarrollo general
+npx expo start
 
-## Learn more
+# Para Android
+npx expo start --android
 
-To learn more about developing your project with Expo, look at the following resources:
+# Para iOS
+npx expo start --ios
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# Para web
+npx expo start --web
+```
 
-## Join the community
+## 📱 **Flujo de la Aplicación**
 
-Join our community of developers creating universal apps.
+### **1. Splash Screen** 
+- Logo animado de Closy
+- Transición automática a bienvenida
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### **2. Pantalla de Bienvenida**
+- Diseño atractivo con collage de estilos
+- Opciones de **Registro** o **Ingreso**
+
+### **3. Registro de Usuario**
+- Formulario completo con validaciones
+- Campos: nombre, email, contraseña, provincia, edad
+- Navegación automática al descubrimiento de estilo
+
+### **4. Login**
+- Autenticación simple
+- Navegación inteligente:
+  - Si ya completó onboarding → Pantalla principal
+  - Si no → Cuestionario de estilo
+
+### **5. Descubrimiento de Estilo**
+- Pantalla con animaciones de "respiración"
+- Introducción al cuestionario personalizado
+
+### **6. Cuestionario Interactivo**
+- **9 estilos diferentes** para evaluar:
+  - Básica, Boho, Cayetana -20, Cayetana +20
+  - Formal Clásica, Moderna Trendy, Pija, Sexy, ST
+- **Sistema de puntuación** 1-5 (No me gusta → Me encanta)
+- **Progreso visual** con navegación hacia atrás
+- **Persistencia** de respuestas en contexto global
+
+### **7. Pantalla Principal**
+- **Saludo personalizado** con nombre del usuario
+- **Top 3 estilos favoritos** con ratings visuales
+- **Acciones rápidas** para explorar y guardarropa
+
+## 🎨 **Paleta de Colores**
+
+- **Principal:** `#FAA6B5` (Rosa suave)
+- **Secundario:** `#4D6F62` (Verde elegante)  
+- **Fondo:** `#FCF6F3` (Beige cálido)
+- **Texto:** `#7A142C` (Granate profundo)
+
+## 📂 **Estructura del Proyecto**
+
+```
+closy-app/
+├── 📱 app/                 # Pantallas (Expo Router)
+│   ├── (tabs)/            # Navegación principal
+│   ├── index.tsx          # Splash screen
+│   ├── welcome.tsx        # Bienvenida
+│   ├── register.tsx       # Registro
+│   ├── login.tsx          # Login
+│   ├── discover-style.tsx # Intro cuestionario
+│   └── questionnaire-block1.tsx # Cuestionario
+├── 🧩 components/         # Componentes reutilizables
+├── 🎯 contexts/          # Estado global (Context API)
+├── 🎨 assets/            # Imágenes, fuentes, videos
+│   ├── images/Images/    # Logos y recursos
+│   ├── Bloque1_onboarding/ # Imágenes del cuestionario
+│   └── fonts/           # Tipografías personalizadas
+├── 🎛️ constants/        # Constantes (colores, etc.)
+└── 🪝 hooks/            # Hooks personalizados
+```
+
+## 🔄 **Estado Global**
+
+La app utiliza **Context API** para manejar:
+
+- **Usuario:** datos personales y estado de login
+- **Respuestas del cuestionario:** persistidas durante la sesión
+- **Progreso del onboarding:** tracking de completación
+- **Navegación inteligente:** redirección basada en estado
+
+## 🛠️ **Scripts Disponibles**
+
+```bash
+npm start          # Inicio rápido
+npm run android    # Ejecutar en Android
+npm run ios        # Ejecutar en iOS  
+npm run web        # Ejecutar en navegador
+npm run lint       # Verificar código
+```
+
+## 🎯 **Funcionalidades Implementadas**
+
+✅ **Sistema de registro y login completo**  
+✅ **Cuestionario interactivo de 9 estilos**  
+✅ **Estado global con Context API**  
+✅ **Navegación inteligente basada en estado**  
+✅ **Animaciones fluidas y atractivas**  
+✅ **Validación de formularios robusta**  
+✅ **Diseño responsive y moderno**  
+✅ **Tipado completo con TypeScript**  
+
+## 🔮 **Próximas Funcionalidades**
+
+🔄 **Persistencia con AsyncStorage**  
+🔄 **Sistema de recomendaciones avanzado**  
+🔄 **Integración con catálogo de ropa**  
+🔄 **Función de guardarropa personal**  
+🔄 **Sistema de notificaciones**  
+🔄 **Modo oscuro/claro**  
+
+
+
+## 📧 **Contacto**
+
+**Closy Team** - Tu estilo personal, potenciado por IA
+
+---
+
+*Hecho con 💖 para fashionistas que quieren descubrir su estilo único*

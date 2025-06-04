@@ -47,7 +47,7 @@ export default function DiscoverStyleScreen() {
       -1, // infinito
       false
     );
-  }, []);
+  }, [opacity, scale, translateY]);
 
   // Estilos animados
   const animatedImageStyle = useAnimatedStyle(() => {
