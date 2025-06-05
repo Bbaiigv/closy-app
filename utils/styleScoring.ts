@@ -143,4 +143,111 @@ export const prepareDataForVisualization = (styleScores: StyleScore[]) => {
         responses: style.responseCount,
         percentage: Number(((style.averageScore / 5) * 100).toFixed(1))
     }));
+};
+
+/**
+ * Mapeo de estilos a marcas disponibles
+ */
+export interface BrandsByStyle {
+    [styleName: string]: string[];
+}
+
+export const STYLE_BRANDS_MAP: BrandsByStyle = {
+    'Básica': ['Zara', 'Stradivarius', 'Mango', 'Pull & Bear', 'H&M'],
+    'Pija': ['Zara', 'Massimo Dutti', 'Scalpers', 'Mango', 'Ralph Lauren'],
+    'Formal Clásica': ['Massimo Dutti', 'Zara', 'Mango', 'Eseoese', 'Scalpers'],
+    'Boho': ['Zara', 'Sézane', 'Scalpers', 'Ese o Ese', 'Mango'],
+    'ST': ['Bershka', 'Pull & Bear', 'Asos', 'Urban Outfitter', 'Zara'],
+    'Moderna Trendy': ['Zara', 'Renatta & Go', 'Nicoli', 'Noon', 'Mango'],
+    'Cayetana -20': ['Zara', 'Stradivarius', 'Mango', 'Pull & Bear', 'Bershka'],
+    'Cayetana +20': ['Massimo Dutti', 'Zara', 'Mango', 'Eseoese', 'Scalpers'],
+    'Sexy': ['Zara', 'Mango', 'Renatta & Go', 'Nicoli', 'Bershka']
+};
+
+/**
+ * Calcula las puntuaciones finales después del bloque 2
+ * Considera tanto las respuestas del bloque 1 como las selecciones del bloque 2
+ */
+export const calculateFinalStyleScores = (responses: any[]): StyleScore[] => {
+    const stylePoints = new Map<string, { total: number; count: number }>();
+
+    responses.forEach(response => {
+        // Extraer el nombre del estilo base (sin la ocasión)
+        const baseStyleName = response.styleName.includes('(')
+            ? response.styleName.split(' (')[0]
+            : response.styleName;
+
+        const current = stylePoints.get(baseStyleName) || { total: 0, count: 0 };
+
+        // Para el bloque 2, dar más peso a las selecciones (son más específicas)
+        const weight = response.questionId > 2000 ? 1.5 : 1;
+
+        stylePoints.set(baseStyleName, {
+            total: current.total + (response.response * weight),
+            count: current.count + 1
+        });
+    });
+
+    return Array.from(stylePoints.entries()).map(([styleName, { total, count }]) => ({
+        styleName,
+        totalScore: total,
+        responseCount: count,
+        averageScore: Number((total / count).toFixed(2))
+    })).sort((a, b) => b.averageScore - a.averageScore);
+};
+
+/**
+ * Obtiene los 3 estilos principales después de completar el bloque 2
+ */
+export const getTop3StylesForBrands = (responses: any[]): StyleScore[] => {
+    const finalScores = calculateFinalStyleScores(responses);
+
+    // Filtrar solo estilos que tengan marcas definidas y buenos puntajes
+    const stylesWithBrands = finalScores.filter(style =>
+        STYLE_BRANDS_MAP[style.styleName] && style.averageScore >= 2
+    );
+
+    return stylesWithBrands.slice(0, 3);
+};
+
+/**
+ * Obtiene las marcas disponibles para un estilo específico
+ */
+export const getBrandsForStyle = (styleName: string): string[] => {
+    return STYLE_BRANDS_MAP[styleName] || [];
+};
+
+/**
+ * Valida si una selección de marcas es válida (2-3 marcas, máximo 5 disponibles)
+ */
+export const validateBrandSelection = (selectedBrands: string[], availableBrands: string[]): {
+    isValid: boolean;
+    message: string;
+} => {
+    if (selectedBrands.length < 2) {
+        return {
+            isValid: false,
+            message: 'Debes seleccionar al menos 2 marcas'
+        };
+    }
+
+    if (selectedBrands.length > 3) {
+        return {
+            isValid: false,
+            message: 'Puedes seleccionar máximo 3 marcas'
+        };
+    }
+
+    const invalidBrands = selectedBrands.filter(brand => !availableBrands.includes(brand));
+    if (invalidBrands.length > 0) {
+        return {
+            isValid: false,
+            message: `Marcas no válidas: ${invalidBrands.join(', ')}`
+        };
+    }
+
+    return {
+        isValid: true,
+        message: 'Selección válida'
+    };
 }; 

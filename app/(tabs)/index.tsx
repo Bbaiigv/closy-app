@@ -90,6 +90,25 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
+
+          {/* Marcas favoritas si las hay */}
+          {state.brandResponses.length > 0 && (
+            <View style={styles.brandsContainer}>
+              <Text style={styles.sectionTitle}>🏷️ Tus Marcas Favoritas</Text>
+              {state.brandResponses.map((brandResponse, index) => (
+                <View key={brandResponse.styleId} style={styles.brandStyleGroup}>
+                  <Text style={styles.brandStyleTitle}>{brandResponse.styleName}</Text>
+                  <View style={styles.brandsList}>
+                    {brandResponse.selectedBrands.map((brand, brandIndex) => (
+                      <View key={`${brand}-${brandIndex}`} style={styles.brandTag}>
+                        <Text style={styles.brandTagText}>{brand}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </>
       ) : (
         <View style={styles.emptyState}>
@@ -109,17 +128,38 @@ export default function HomeScreen() {
       {/* Botón para próximo bloque si está disponible */}
       {state.styleScores.length > 0 && (
         <View style={styles.actionContainer}>
-          <TouchableOpacity 
-            style={styles.nextBlockButton}
-            onPress={() => {
-              router.push('/questionnaire-block2');
-            }}
-          >
-            <Text style={styles.nextBlockButtonText}>Continuar al Siguiente Bloque</Text>
-            <Text style={styles.nextBlockSubtext}>
-              Exploraremos {recommendations.recommendedStyles.length} estilos seleccionados para ti
-            </Text>
-          </TouchableOpacity>
+          {state.brandResponses.length === 0 ? (
+            <TouchableOpacity 
+              style={styles.nextBlockButton}
+              onPress={() => {
+                // Decidir si ir al bloque 2 o 3 según lo que haya completado
+                const hasBlock2Responses = state.questionnaireResponses.some(r => r.questionId > 2000);
+                if (hasBlock2Responses) {
+                  router.push('/questionnaire-block3' as any);
+                } else {
+                  router.push('/questionnaire-block2');
+                }
+              }}
+            >
+              <Text style={styles.nextBlockButtonText}>
+                {state.questionnaireResponses.some(r => r.questionId > 2000) 
+                  ? 'Continuar a Marcas' 
+                  : 'Continuar al Siguiente Bloque'}
+              </Text>
+              <Text style={styles.nextBlockSubtext}>
+                {state.questionnaireResponses.some(r => r.questionId > 2000)
+                  ? 'Selecciona tus marcas favoritas para cada estilo'
+                  : `Exploraremos ${recommendations.recommendedStyles.length} estilos seleccionados para ti`}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.completedContainer}>
+              <Text style={styles.completedTitle}>🎉 ¡Perfil Completado!</Text>
+              <Text style={styles.completedText}>
+                Has completado todos los cuestionarios. Tu perfil de estilo está listo.
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </ScrollView>
@@ -298,5 +338,66 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.9,
     textAlign: 'center',
+  },
+  brandsContainer: {
+    margin: 20,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  brandStyleGroup: {
+    marginBottom: 15,
+  },
+  brandStyleTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#7A142C',
+    marginBottom: 8,
+  },
+  brandsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  brandTag: {
+    backgroundColor: '#FAA6B5',
+    padding: 8,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  brandTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7A142C',
+  },
+  completedContainer: {
+    margin: 20,
+    padding: 40,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  completedTitle: {
+    fontSize: 22,
+    fontFamily: 'Castio-Regular',
+    color: '#7A142C',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  completedText: {
+    fontSize: 16,
+    color: '#4D6F62',
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });

@@ -15,6 +15,13 @@ export interface QuestionnaireResponse {
   styleName: string;
 }
 
+export interface BrandResponse {
+  styleId: string;
+  styleName: string;
+  selectedBrands: string[];
+  questionId: number;
+}
+
 export interface StyleScore {
   styleName: string;
   totalScore: number;
@@ -25,6 +32,7 @@ export interface StyleScore {
 export interface AppState {
   user: User | null;
   questionnaireResponses: QuestionnaireResponse[];
+  brandResponses: BrandResponse[];
   styleScores: StyleScore[];
   currentQuestionnaireBlock: number;
   isOnboardingCompleted: boolean;
@@ -37,6 +45,8 @@ type AppAction =
   | { type: 'LOGOUT_USER' }
   | { type: 'ADD_QUESTIONNAIRE_RESPONSE'; payload: QuestionnaireResponse }
   | { type: 'SET_QUESTIONNAIRE_RESPONSES'; payload: QuestionnaireResponse[] }
+  | { type: 'ADD_BRAND_RESPONSE'; payload: BrandResponse }
+  | { type: 'SET_BRAND_RESPONSES'; payload: BrandResponse[] }
   | { type: 'UPDATE_STYLE_SCORES'; payload: StyleScore[] }
   | { type: 'SET_CURRENT_BLOCK'; payload: number }
   | { type: 'COMPLETE_ONBOARDING' }
@@ -46,6 +56,7 @@ type AppAction =
 const initialState: AppState = {
   user: null,
   questionnaireResponses: [],
+  brandResponses: [],
   styleScores: [],
   currentQuestionnaireBlock: 1,
   isOnboardingCompleted: false,
@@ -122,6 +133,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         questionnaireResponses: action.payload,
         styleScores: newStyleScores,
+      };
+    
+    case 'ADD_BRAND_RESPONSE':
+      return {
+        ...state,
+        brandResponses: [...state.brandResponses, action.payload],
+      };
+    
+    case 'SET_BRAND_RESPONSES':
+      return {
+        ...state,
+        brandResponses: action.payload,
       };
     
     case 'UPDATE_STYLE_SCORES':

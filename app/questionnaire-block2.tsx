@@ -181,10 +181,16 @@ export default function QuestionnaireBlock2Screen() {
     if (isLastQuestion) {
       showAlert(
         'Bloque 2 Completado',
-        '¡Excelente! Has completado la selección de outfits por ocasión. Tu perfil de estilo está cada vez más personalizado.',
+        '¡Excelente! Has completado la selección de outfits por ocasión. ¿Quieres continuar con la selección de marcas?',
         [
           {
-            text: 'Ver mi perfil actualizado',
+            text: 'Ir a marcas',
+            onPress: () => {
+              router.push('./questionnaire-block3');
+            },
+          },
+          {
+            text: 'Ver perfil',
             onPress: () => {
               router.push('/(tabs)');
             },
