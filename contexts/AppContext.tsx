@@ -22,6 +22,18 @@ export interface BrandResponse {
   questionId: number;
 }
 
+export interface UnifiedBrandResponse {
+  selectedBrands: string[];
+  brandScores: {
+    brandName: string;
+    finalScore: number;
+    frequency: number;
+    styles: string[];
+  }[];
+  topStyles: string[];
+  timestamp: number;
+}
+
 export interface StyleScore {
   styleName: string;
   totalScore: number;
@@ -29,11 +41,25 @@ export interface StyleScore {
   averageScore: number;
 }
 
+export interface LookPriorities {
+  priorities: {[key: string]: number};
+  timestamp: number;
+}
+
+export interface SubcategoryResponse {
+  category: string;
+  selections: string[];
+  timestamp: number;
+}
+
 export interface AppState {
   user: User | null;
   questionnaireResponses: QuestionnaireResponse[];
   brandResponses: BrandResponse[];
+  unifiedBrandResponse: UnifiedBrandResponse | null;
   styleScores: StyleScore[];
+  lookPriorities: LookPriorities | null;
+  subcategoryResponses: SubcategoryResponse[];
   currentQuestionnaireBlock: number;
   isOnboardingCompleted: boolean;
 }
@@ -47,7 +73,10 @@ type AppAction =
   | { type: 'SET_QUESTIONNAIRE_RESPONSES'; payload: QuestionnaireResponse[] }
   | { type: 'ADD_BRAND_RESPONSE'; payload: BrandResponse }
   | { type: 'SET_BRAND_RESPONSES'; payload: BrandResponse[] }
+  | { type: 'ADD_UNIFIED_BRAND_RESPONSE'; payload: UnifiedBrandResponse }
   | { type: 'UPDATE_STYLE_SCORES'; payload: StyleScore[] }
+  | { type: 'ADD_LOOK_PRIORITIES'; payload: LookPriorities }
+  | { type: 'ADD_SUBCATEGORY_RESPONSE'; payload: SubcategoryResponse }
   | { type: 'SET_CURRENT_BLOCK'; payload: number }
   | { type: 'COMPLETE_ONBOARDING' }
   | { type: 'RESET_APP' };
@@ -57,7 +86,10 @@ const initialState: AppState = {
   user: null,
   questionnaireResponses: [],
   brandResponses: [],
+  unifiedBrandResponse: null,
   styleScores: [],
+  lookPriorities: null,
+  subcategoryResponses: [],
   currentQuestionnaireBlock: 1,
   isOnboardingCompleted: false,
 };
@@ -147,10 +179,28 @@ function appReducer(state: AppState, action: AppAction): AppState {
         brandResponses: action.payload,
       };
     
+    case 'ADD_UNIFIED_BRAND_RESPONSE':
+      return {
+        ...state,
+        unifiedBrandResponse: action.payload,
+      };
+    
     case 'UPDATE_STYLE_SCORES':
       return {
         ...state,
         styleScores: action.payload,
+      };
+    
+    case 'ADD_LOOK_PRIORITIES':
+      return {
+        ...state,
+        lookPriorities: action.payload,
+      };
+    
+    case 'ADD_SUBCATEGORY_RESPONSE':
+      return {
+        ...state,
+        subcategoryResponses: [...state.subcategoryResponses, action.payload],
       };
     
     case 'SET_CURRENT_BLOCK':
@@ -166,7 +216,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     
     case 'RESET_APP':
-      return initialState;
+      return {
+        ...initialState,
+        lookPriorities: null,
+      };
     
     default:
       return state;

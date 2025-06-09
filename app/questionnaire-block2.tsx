@@ -29,33 +29,70 @@ interface TopStyle {
 
 const { width, height } = Dimensions.get('window');
 
-// Mapeo de estilos a sus imágenes
-const styleImages = {
-  basica: require('../assets/Bloque1_onboarding/Basica.png'),
-  boho: require('../assets/Bloque1_onboarding/Boho.png'),
-  cayetanaMenos20: require('../assets/Bloque1_onboarding/Cayetana-20.png'),
-  cayetanaMas20: require('../assets/Bloque1_onboarding/Cayetana_20.png'),
-  formalClasica: require('../assets/Bloque1_onboarding/Formal_clasica.png'),
-  modernaTrendy: require('../assets/Bloque1_onboarding/Moderna_trendy.png'),
-  pija: require('../assets/Bloque1_onboarding/Pija.png'),
-  sexy: require('../assets/Bloque1_onboarding/Sexy.png'),
-  st: require('../assets/Bloque1_onboarding/ST.png'),
+// Mapeo de estilos e imágenes por ocasión del SegundoCuestionario
+const secondQuestionnaireImages = {
+  // Día a día
+  dia_a_dia: {
+    basica: require('../assets/images/SegundoCuestionario/dia_a_dia_basica.png'),
+    boho: require('../assets/images/SegundoCuestionario/dia_a_dia_boho.png'),
+    cayetanaMenos20: require('../assets/images/SegundoCuestionario/dia_a_dia_caye-20.png'),
+    cayetanaMas20: require('../assets/images/SegundoCuestionario/dia_a_dia_caye20.png'),
+    formalClasica: require('../assets/images/SegundoCuestionario/dia_a_dia_formal.png'),
+    modernaTrendy: require('../assets/images/SegundoCuestionario/dia_a_dia_trendy.png'),
+    pija: require('../assets/images/SegundoCuestionario/dia_a_dia_pija.png'),
+    sexy: require('../assets/images/SegundoCuestionario/dia_a_dia_sexy.png'),
+    st: require('../assets/images/SegundoCuestionario/dia_a_dia_st.png'),
+  },
+  // Formal
+  formal: {
+    basica: require('../assets/images/SegundoCuestionario/formal_basica.png'),
+    boho: require('../assets/images/SegundoCuestionario/formal_boho.png'),
+    cayetanaMenos20: require('../assets/images/SegundoCuestionario/formal_caye-20.png'),
+    cayetanaMas20: require('../assets/images/SegundoCuestionario/formal_caye20.png'),
+    formalClasica: require('../assets/images/SegundoCuestionario/formal_formal.png'),
+    modernaTrendy: require('../assets/images/SegundoCuestionario/formal_trendy.png'),
+    pija: require('../assets/images/SegundoCuestionario/formal_pija.png'),
+    sexy: require('../assets/images/SegundoCuestionario/formal_sexy.png'),
+    st: require('../assets/images/SegundoCuestionario/formal_st.png'),
+  },
+  // Fiesta
+  fiesta: {
+    basica: require('../assets/images/SegundoCuestionario/fiesta_basica.png'),
+    boho: require('../assets/images/SegundoCuestionario/fiesta_boho.png'),
+    cayetanaMenos20: require('../assets/images/SegundoCuestionario/fiesta_caye-20.png'),
+    cayetanaMas20: require('../assets/images/SegundoCuestionario/fiesta_caye20.png'),
+    formalClasica: require('../assets/images/SegundoCuestionario/fiesta_formal.png'),
+    modernaTrendy: require('../assets/images/SegundoCuestionario/fiesta_trendy.png'),
+    pija: require('../assets/images/SegundoCuestionario/fiesta_pija.png'),
+    sexy: require('../assets/images/SegundoCuestionario/fiesta_sexy.png'),
+    st: require('../assets/images/SegundoCuestionario/fiesta_st.png'),
+  }
 };
 
-// Mapeo de nombres de estilo a imágenes
-const getImageForStyle = (styleName: string): any => {
-  const styleMap: { [key: string]: any } = {
-    'Básica': styleImages.basica,
-    'Boho': styleImages.boho,
-    'Cayetana -20': styleImages.cayetanaMenos20,
-    'Cayetana +20': styleImages.cayetanaMas20,
-    'Formal Clásica': styleImages.formalClasica,
-    'Moderna Trendy': styleImages.modernaTrendy,
-    'Pija': styleImages.pija,
-    'Sexy': styleImages.sexy,
-    'ST': styleImages.st,
+// Mapeo de nombres de estilo a imágenes según la ocasión
+const getImageForStyle = (styleName: string, occasion: string): any => {
+  // Mapear ocasiones a las claves del objeto
+  const occasionMap: { [key: string]: string } = {
+    'día a día': 'dia_a_dia',
+    'evento formal': 'formal',
+    'salir de fiesta': 'fiesta'
   };
-  return styleMap[styleName] || styleImages.basica;
+
+  const occasionKey = occasionMap[occasion] || 'dia_a_dia';
+  const occasionImages = secondQuestionnaireImages[occasionKey as keyof typeof secondQuestionnaireImages];
+
+  const styleMap: { [key: string]: any } = {
+    'Básica': occasionImages.basica,
+    'Boho': occasionImages.boho,
+    'Cayetana -20': occasionImages.cayetanaMenos20,
+    'Cayetana +20': occasionImages.cayetanaMas20,
+    'Formal Clásica': occasionImages.formalClasica,
+    'Moderna Trendy': occasionImages.modernaTrendy,
+    'Pija': occasionImages.pija,
+    'Sexy': occasionImages.sexy,
+    'ST': occasionImages.st,
+  };
+  return styleMap[styleName] || occasionImages.basica;
 };
 
 // Preguntas fijas para el bloque 2
@@ -109,29 +146,23 @@ export default function QuestionnaireBlock2Screen() {
       }
 
       // Si hay menos de 4 estilos, completar con los mejores disponibles
-      const stylesWithImages: TopStyle[] = filteredStyles.map(style => ({
-        styleName: style.styleName,
-        imagePath: getImageForStyle(style.styleName),
-        averageScore: style.averageScore
-      }));
+      let stylesData = [...filteredStyles];
 
       // Si necesitamos más estilos para llegar a 4, añadir de los disponibles
-      if (stylesWithImages.length < 4) {
+      if (stylesData.length < 4) {
         const allStyles = state.styleScores
           .filter(style => !filteredStyles.some(fs => fs.styleName === style.styleName))
           .sort((a, b) => b.averageScore - a.averageScore)
-          .slice(0, 4 - stylesWithImages.length);
+          .slice(0, 4 - stylesData.length);
 
-        allStyles.forEach(style => {
-          stylesWithImages.push({
-            styleName: style.styleName,
-            imagePath: getImageForStyle(style.styleName),
-            averageScore: style.averageScore
-          });
-        });
+        stylesData = [...stylesData, ...allStyles];
       }
 
-      setTopStyles(stylesWithImages);
+      setTopStyles(stylesData.map(style => ({
+        styleName: style.styleName,
+        imagePath: null, // Se asignará dinámicamente
+        averageScore: style.averageScore
+      })));
       setIsLoading(false);
     };
 
@@ -286,7 +317,7 @@ export default function QuestionnaireBlock2Screen() {
             >
               <View style={styles.imageContainer}>
                 <Image
-                  source={style.imagePath}
+                  source={getImageForStyle(style.styleName, currentQuestion.occasion)}
                   style={styles.styleImage}
                   resizeMode="cover"
                 />

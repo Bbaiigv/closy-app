@@ -153,15 +153,15 @@ export interface BrandsByStyle {
 }
 
 export const STYLE_BRANDS_MAP: BrandsByStyle = {
-    'Básica': ['Zara', 'Stradivarius', 'Mango', 'Pull & Bear', 'H&M'],
-    'Pija': ['Zara', 'Massimo Dutti', 'Scalpers', 'Mango', 'Ralph Lauren'],
-    'Formal Clásica': ['Massimo Dutti', 'Zara', 'Mango', 'Eseoese', 'Scalpers'],
-    'Boho': ['Zara', 'Sézane', 'Scalpers', 'Ese o Ese', 'Mango'],
-    'ST': ['Bershka', 'Pull & Bear', 'Asos', 'Urban Outfitter', 'Zara'],
-    'Moderna Trendy': ['Zara', 'Renatta & Go', 'Nicoli', 'Noon', 'Mango'],
-    'Cayetana -20': ['Zara', 'Stradivarius', 'Mango', 'Pull & Bear', 'Bershka'],
-    'Cayetana +20': ['Massimo Dutti', 'Zara', 'Mango', 'Eseoese', 'Scalpers'],
-    'Sexy': ['Zara', 'Mango', 'Renatta & Go', 'Nicoli', 'Bershka']
+    'Caye +20': ['Zara', 'Massimo Dutti', 'Mango', 'Scalpers', 'Sezane', 'Silbon'],
+    'Caye -20': ['Renatta', 'Nicoli', 'Mango teen', 'NOON', 'The are', 'Zara'],
+    'Pija': ['Zara', 'Mango', 'Silbon', 'Asos', 'Stradivarius', 'H&M'],
+    'Básica': ['Zara', 'Pull & Bear', 'Ese o Ese', 'Parfois', 'H&M', 'Asos'],
+    'Formal': ['Zara', 'Mango', 'Massimo Dutti', 'NA-KD', 'Sezane', 'Scalpers'],
+    'Sexy': ['Zara', 'Bershka', 'Stradivarius', 'House of CB', 'Asos', 'NA-KD'],
+    'Boho': ['Zara', 'Parfois', 'Sezane', 'Asos', 'H&M', 'Pull & Bear'],
+    'M-ST': ['Pull & Bear', 'Bershka', 'NUDE P', 'Urban Outfitter', 'H&M', 'Asos'],
+    'M-Trendy': ['Zara', 'Mango', 'Pull & Bear', 'Bershka', 'Stradivarius', 'Asos', 'H&M', 'Urban Outfitter', 'Parfois', 'Sezane', 'Massimo Dutti', 'Scalpers', 'Silbon', 'Renatta', 'Nicoli', 'NOON', 'NA-KD', 'House of CB', 'Ese o Ese', 'Mango teen', 'The are', 'NUDE P']
 };
 
 /**
@@ -218,7 +218,138 @@ export const getBrandsForStyle = (styleName: string): string[] => {
 };
 
 /**
+ * Interfaz para marcas unificadas con puntuación
+ */
+export interface BrandWithScore {
+    brandName: string;
+    frequency: number;
+    score: number;
+    styles: string[];
+}
+
+/**
+ * Obtiene marcas unificadas de los top 3 estilos con puntuaciones
+ */
+export const getUnifiedBrandsForTopStyles = (responses: any[]): BrandWithScore[] => {
+    const top3Styles = getTop3StylesForBrands(responses);
+
+    if (top3Styles.length === 0) {
+        return [];
+    }
+
+    // Mapa para contar frecuencias de marcas
+    const brandFrequency = new Map<string, { count: number; styles: string[] }>();
+
+    // Recopilar todas las marcas de los top 3 estilos
+    top3Styles.forEach(style => {
+        const brands = STYLE_BRANDS_MAP[style.styleName] || [];
+        brands.forEach(brand => {
+            const current = brandFrequency.get(brand) || { count: 0, styles: [] };
+            brandFrequency.set(brand, {
+                count: current.count + 1,
+                styles: [...current.styles, style.styleName]
+            });
+        });
+    });
+
+    // Convertir a array con puntuaciones
+    const brandsWithScore: BrandWithScore[] = Array.from(brandFrequency.entries()).map(([brandName, { count, styles }]) => {
+        // Asignar puntuación según frecuencia
+        let score: number;
+        if (count === 1) {
+            score = 3; // Marca única
+        } else if (count === 2) {
+            score = 2; // Marca en 2 estilos
+        } else {
+            score = 1; // Marca en 3 o más estilos
+        }
+
+        return {
+            brandName,
+            frequency: count,
+            score,
+            styles: [...new Set(styles)] // Eliminar duplicados
+        };
+    });
+
+    // Ordenar por puntuación (descendente) y luego alfabéticamente
+    return brandsWithScore.sort((a, b) => {
+        if (a.score !== b.score) {
+            return b.score - a.score; // Mayor puntuación primero
+        }
+        return a.brandName.localeCompare(b.brandName); // Orden alfabético
+    });
+};
+
+/**
+ * Valida la selección de marcas unificada
+ */
+export const validateUnifiedBrandSelection = (selectedBrands: string[], availableBrands: BrandWithScore[]): {
+    isValid: boolean;
+    message: string;
+} => {
+    if (selectedBrands.length < 2) {
+        return {
+            isValid: false,
+            message: 'Debes seleccionar al menos 2 marcas'
+        };
+    }
+
+    if (selectedBrands.length > 5) {
+        return {
+            isValid: false,
+            message: 'Puedes seleccionar máximo 5 marcas'
+        };
+    }
+
+    const availableBrandNames = availableBrands.map(b => b.brandName);
+    const invalidBrands = selectedBrands.filter(brand => !availableBrandNames.includes(brand));
+
+    if (invalidBrands.length > 0) {
+        return {
+            isValid: false,
+            message: `Marcas no válidas: ${invalidBrands.join(', ')}`
+        };
+    }
+
+    return {
+        isValid: true,
+        message: 'Selección válida'
+    };
+};
+
+/**
+ * Calcula las puntuaciones finales de las marcas seleccionadas
+ */
+export const calculateBrandScores = (selectedBrands: string[], availableBrands: BrandWithScore[]): {
+    brandName: string;
+    finalScore: number;
+    frequency: number;
+    styles: string[];
+}[] => {
+    return selectedBrands.map(brandName => {
+        const brandData = availableBrands.find(b => b.brandName === brandName);
+        if (!brandData) {
+            return {
+                brandName,
+                finalScore: 0,
+                frequency: 0,
+                styles: []
+            };
+        }
+
+        return {
+            brandName: brandData.brandName,
+            finalScore: brandData.score,
+            frequency: brandData.frequency,
+            styles: brandData.styles
+        };
+    });
+};
+
+/**
  * Valida si una selección de marcas es válida (2-3 marcas, máximo 5 disponibles)
+ * @deprecated Usar validateUnifiedBrandSelection en su lugar
  */
 export const validateBrandSelection = (selectedBrands: string[], availableBrands: string[]): {
     isValid: boolean;

@@ -9,13 +9,19 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
+  Animated,
 } from 'react-native';
 import { useAppContext } from '@/contexts/AppContext';
 import { useAlert } from '@/hooks/useAlert';
 import { 
   getTop3StylesForBrands, 
   getBrandsForStyle, 
-  validateBrandSelection 
+  validateBrandSelection,
+  getUnifiedBrandsForTopStyles,
+  validateUnifiedBrandSelection,
+  calculateBrandScores,
+  BrandWithScore
 } from '@/utils/styleScoring';
 
 interface BrandQuestion {
@@ -23,6 +29,247 @@ interface BrandQuestion {
   styleName: string;
   availableBrands: string[];
 }
+
+interface LookElement {
+  id: string;
+  name: string;
+  image: any;
+  displayName: string;
+}
+
+interface SubcategoryOption {
+  id: string;
+  name: string;
+  image: any;
+  displayName: string;
+  styleMapping?: string[]; // Para zapatos y capa que se mapean a estilos
+}
+
+interface SubcategoryQuestion {
+  category: string;
+  categoryDisplayName: string;
+  options: SubcategoryOption[];
+  selectionType: 'single' | 'multiple'; // single para accesorios/base, multiple para zapatos/capa
+  maxSelections?: number;
+}
+
+const lookElements: LookElement[] = [
+  {
+    id: 'zapatos',
+    name: 'zapatos',
+    image: require('../assets/images/TercerCuestionario/zapatos.png'),
+    displayName: 'Zapatos'
+  },
+  {
+    id: 'accesorios',
+    name: 'accesorios', 
+    image: require('../assets/images/TercerCuestionario/accesorios.png'),
+    displayName: 'Accesorios'
+  },
+  {
+    id: 'base',
+    name: 'base',
+    image: require('../assets/images/TercerCuestionario/base.png'),
+    displayName: 'Base'
+  },
+  {
+    id: 'capaExterior',
+    name: 'capaExterior',
+    image: require('../assets/images/TercerCuestionario/capaExterior.png'),
+    displayName: 'Capa Exterior'
+  }
+];
+
+// Mapeo de estilos a imágenes de zapatos
+const zapatosStyleMapping: { [key: string]: string } = {
+  'Boho': 'boho',
+  'Formal': 'formal', 
+  'Trendy': 'trendy',
+  'Básica': 'basica',
+  'Sexy': 'sexy',
+  'Streetwear': 'streetwear',
+  'Pija': 'pija',
+  'Caye-20': 'caye-20'
+};
+
+// Mapeo de estilos a imágenes de capa exterior
+const capaStyleMapping: { [key: string]: string } = {
+  'Boho': 'boho',
+  'Formal': 'formal-Caye20-Pija-Sexy',
+  'Trendy': 'basica-ST-Trendy',
+  'Básica': 'basica-ST-Trendy',
+  'Streetwear': 'basica-ST-Trendy',
+  'Pija': 'pija-Formal',
+  'Caye-20': 'caye-20-Pija'
+};
+
+// Opciones para cada categoría
+const subcategoryQuestions: { [key: string]: SubcategoryQuestion } = {
+  accesorios: {
+    category: 'accesorios',
+    categoryDisplayName: 'Accesorios',
+    selectionType: 'single',
+    options: [
+      {
+        id: 'bisuteria',
+        name: 'bisuteria',
+        image: require('../assets/images/TercerCuestionario/accesorios/bisuteria.png'),
+        displayName: 'Bisutería'
+      },
+      {
+        id: 'bolsos',
+        name: 'bolsos',
+        image: require('../assets/images/TercerCuestionario/accesorios/bolsos.png'),
+        displayName: 'Bolsos'
+      },
+      {
+        id: 'otro',
+        name: 'otro',
+        image: require('../assets/images/TercerCuestionario/accesorios/otro.png'),
+        displayName: 'Otros'
+      }
+    ]
+  },
+  base: {
+    category: 'base',
+    categoryDisplayName: 'Base',
+    selectionType: 'single',
+    options: [
+      {
+        id: 'vestidos',
+        name: 'vestidos',
+        image: require('../assets/images/TercerCuestionario/Base/Vestidos.png'),
+        displayName: 'Vestidos'
+      },
+      {
+        id: 'pantalones',
+        name: 'pantalones',
+        image: require('../assets/images/TercerCuestionario/Base/pantalones.png'),
+        displayName: 'Pantalones'
+      },
+      {
+        id: 'partesArriba',
+        name: 'partesArriba',
+        image: require('../assets/images/TercerCuestionario/Base/partesArriba.png'),
+        displayName: 'Partes de Arriba'
+      }
+    ]
+  },
+  zapatos: {
+    category: 'zapatos',
+    categoryDisplayName: 'Zapatos',
+    selectionType: 'multiple',
+    maxSelections: 3,
+    options: [
+      {
+        id: 'boho',
+        name: 'boho',
+        image: require('../assets/images/TercerCuestionario/zapatos/boho.png'),
+        displayName: 'Boho',
+        styleMapping: ['Boho']
+      },
+      {
+        id: 'formal',
+        name: 'formal',
+        image: require('../assets/images/TercerCuestionario/zapatos/formal.png'),
+        displayName: 'Formal',
+        styleMapping: ['Formal']
+      },
+      {
+        id: 'trendy',
+        name: 'trendy',
+        image: require('../assets/images/TercerCuestionario/zapatos/trendy.png'),
+        displayName: 'Trendy',
+        styleMapping: ['Trendy']
+      },
+      {
+        id: 'basica',
+        name: 'basica',
+        image: require('../assets/images/TercerCuestionario/zapatos/basica.png'),
+        displayName: 'Básica',
+        styleMapping: ['Básica']
+      },
+      {
+        id: 'sexy',
+        name: 'sexy',
+        image: require('../assets/images/TercerCuestionario/zapatos/sexy.png'),
+        displayName: 'Sexy',
+        styleMapping: ['Sexy']
+      },
+      {
+        id: 'streetwear',
+        name: 'streetwear',
+        image: require('../assets/images/TercerCuestionario/zapatos/streetwear.png'),
+        displayName: 'Streetwear',
+        styleMapping: ['Streetwear']
+      },
+      {
+        id: 'pija',
+        name: 'pija',
+        image: require('../assets/images/TercerCuestionario/zapatos/pija.png'),
+        displayName: 'Pija',
+        styleMapping: ['Pija']
+      },
+      {
+        id: 'caye-20',
+        name: 'caye-20',
+        image: require('../assets/images/TercerCuestionario/zapatos/caye-20.png'),
+        displayName: 'Caye-20',
+        styleMapping: ['Caye-20']
+      }
+    ]
+  },
+  capaExterior: {
+    category: 'capaExterior',
+    categoryDisplayName: 'Capa Exterior',
+    selectionType: 'multiple',
+    maxSelections: 3,
+    options: [
+      {
+        id: 'boho',
+        name: 'boho',
+        image: require('../assets/images/TercerCuestionario/capa/boho.png'),
+        displayName: 'Boho',
+        styleMapping: ['Boho']
+      },
+      {
+        id: 'formal-caye20-pija-sexy',
+        name: 'formal-caye20-pija-sexy',
+        image: require('../assets/images/TercerCuestionario/capa/formal-Caye20-Pija-Sexy.png'),
+        displayName: 'Formal/Elegante',
+        styleMapping: ['Formal', 'Caye-20', 'Pija', 'Sexy']
+      },
+      {
+        id: 'basica-st-trendy',
+        name: 'basica-st-trendy',
+        image: require('../assets/images/TercerCuestionario/capa/basica-ST-Trendy.png'),
+        displayName: 'Básica/Trendy',
+        styleMapping: ['Básica', 'Streetwear', 'Trendy']
+      },
+      {
+        id: 'pija-formal',
+        name: 'pija-formal',
+        image: require('../assets/images/TercerCuestionario/capa/pija-Formal.png'),
+        displayName: 'Pija/Formal',
+        styleMapping: ['Pija', 'Formal']
+      },
+      {
+        id: 'caye20-formal',
+        name: 'caye20-formal',
+        image: require('../assets/images/TercerCuestionario/capa/caye20-Formal.png'),
+        displayName: 'Caye-20/Formal',
+        styleMapping: ['Caye-20', 'Formal']
+      },
+      {
+        id: 'caye-20-pija',
+        name: 'caye-20-pija',
+        image: require('../assets/images/TercerCuestionario/capa/caye-20-Pija.png'),
+        displayName: 'Caye-20/Pija',
+        styleMapping: ['Caye-20', 'Pija']
+      }
+    ]
+  }
+};
 
 const { width, height } = Dimensions.get('window');
 
@@ -56,17 +303,46 @@ export default function QuestionnaireBlock3Screen() {
     'Castio-Regular': require('../assets/fonts/Castio-Regular.ttf'),
   });
 
+  const [unifiedBrands, setUnifiedBrands] = useState<BrandWithScore[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [topStylesInfo, setTopStylesInfo] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Estados deprecated para retrocompatibilidad
   const [brandQuestions, setBrandQuestions] = useState<BrandQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Estados para la pregunta de elementos del look
+  const [showLookPriorityQuestion, setShowLookPriorityQuestion] = useState(false);
+  const [lookPriorities, setLookPriorities] = useState<{[key: string]: number}>({});
+  const [animatedValues] = useState(() => 
+    lookElements.reduce((acc, element) => {
+      acc[element.id] = new Animated.Value(1);
+      return acc;
+    }, {} as {[key: string]: Animated.Value})
+  );
+  
+  // Estados para los subcuestionarios
+  const [showSubcategoryQuestions, setShowSubcategoryQuestions] = useState(false);
+  const [currentSubcategoryIndex, setCurrentSubcategoryIndex] = useState(0);
+  const [subcategoryOrder, setSubcategoryOrder] = useState<string[]>([]);
+  const [subcategorySelections, setSubcategorySelections] = useState<{[key: string]: string[]}>({});
+  const [subcategoryAnimatedValues] = useState(() => 
+    Object.keys(subcategoryQuestions).reduce((acc, category) => {
+      acc[category] = subcategoryQuestions[category].options.reduce((optAcc, option) => {
+        optAcc[option.id] = new Animated.Value(1);
+        return optAcc;
+      }, {} as {[key: string]: Animated.Value});
+      return acc;
+    }, {} as {[key: string]: {[key: string]: Animated.Value}})
+  );
 
   useEffect(() => {
-    // Obtener los 3 mejores estilos y crear preguntas de marcas
-    const generateBrandQuestions = () => {
-      const top3Styles = getTop3StylesForBrands(state.questionnaireResponses);
+    // Generar marcas unificadas basadas en los top 3 estilos
+    const generateUnifiedBrands = () => {
+      const brandsWithScore = getUnifiedBrandsForTopStyles(state.questionnaireResponses);
       
-      if (top3Styles.length < 2) {
+      if (brandsWithScore.length === 0) {
         showAlert(
           'Cuestionarios previos incompletos',
           'Necesitas completar los bloques anteriores antes de continuar.',
@@ -75,23 +351,18 @@ export default function QuestionnaireBlock3Screen() {
         return;
       }
 
-      const questions: BrandQuestion[] = top3Styles.map((style, index) => ({
-        id: index + 1,
-        styleName: style.styleName,
-        availableBrands: getBrandsForStyle(style.styleName)
-      }));
+      const top3Styles = getTop3StylesForBrands(state.questionnaireResponses);
+      const styleNames = top3Styles.map(style => style.styleName);
 
-      setBrandQuestions(questions);
+      setUnifiedBrands(brandsWithScore);
+      setTopStylesInfo(styleNames);
       setIsLoading(false);
     };
 
-    generateBrandQuestions();
+    generateUnifiedBrands();
   }, [state.questionnaireResponses]);
 
-  const currentQuestion = brandQuestions[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === brandQuestions.length - 1;
-
-  const handleBrandToggle = (brand: string): void => {
+  const handleUnifiedBrandToggle = (brand: string): void => {
     setSelectedBrands(prevSelected => {
       const isAlreadySelected = prevSelected.includes(brand);
       
@@ -99,8 +370,8 @@ export default function QuestionnaireBlock3Screen() {
         // Deseleccionar
         return prevSelected.filter(b => b !== brand);
       } else {
-        // Seleccionar si no hemos llegado al límite de 3
-        if (prevSelected.length < 3) {
+        // Seleccionar si no hemos llegado al límite de 5
+        if (prevSelected.length < 5) {
           return [...prevSelected, brand];
         }
         return prevSelected;
@@ -108,26 +379,359 @@ export default function QuestionnaireBlock3Screen() {
     });
   };
 
-  const handleNext = (): void => {
-    const validation = validateBrandSelection(selectedBrands, currentQuestion.availableBrands);
+  const handleUnifiedBrandsSubmit = (): void => {
+    const validation = validateUnifiedBrandSelection(selectedBrands, unifiedBrands);
     
     if (!validation.isValid) {
       showAlert('Selección no válida', validation.message);
       return;
     }
 
-    // Guardar la respuesta de marcas
+    // Calcular puntuaciones de las marcas seleccionadas
+    const brandScores = calculateBrandScores(selectedBrands, unifiedBrands);
+
+    // Guardar la respuesta unificada de marcas
     dispatch({
-      type: 'ADD_BRAND_RESPONSE',
+      type: 'ADD_UNIFIED_BRAND_RESPONSE',
       payload: {
-        styleId: `${currentQuestion.styleName}-${currentQuestion.id}`,
-        styleName: currentQuestion.styleName,
-        selectedBrands: selectedBrands,
-        questionId: currentQuestion.id + 3000, // Offset para bloque 3
+        selectedBrands,
+        brandScores,
+        topStyles: topStylesInfo,
+        timestamp: Date.now(),
       },
     });
 
-    if (isLastQuestion) {
+    // Continuar a la pregunta de prioridades del look
+    setShowLookPriorityQuestion(true);
+  };
+
+  const handleBack = (): void => {
+    router.back();
+  };
+
+  const getBrandColor = (brand: string): string => {
+    return brandColors[brand] || '#7A142C';
+  };
+
+  const handleLookElementPress = (elementId: string): void => {
+    const currentPriority = lookPriorities[elementId];
+    const nextPriorityNumber = Object.keys(lookPriorities).length + 1;
+    
+    if (currentPriority) {
+      // Ya está seleccionado, remover y ajustar prioridades
+      const newPriorities = { ...lookPriorities };
+      delete newPriorities[elementId];
+      
+      // Reajustar números de prioridad
+      Object.keys(newPriorities).forEach(key => {
+        if (newPriorities[key] > currentPriority) {
+          newPriorities[key] -= 1;
+        }
+      });
+      
+      setLookPriorities(newPriorities);
+      
+      // Animar salida
+      Animated.sequence([
+        Animated.timing(animatedValues[elementId], {
+          toValue: 1.2,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValues[elementId], {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else if (nextPriorityNumber <= 4) {
+      // Agregar nueva prioridad
+      setLookPriorities(prev => ({
+        ...prev,
+        [elementId]: nextPriorityNumber
+      }));
+      
+      // Animar selección
+      Animated.sequence([
+        Animated.timing(animatedValues[elementId], {
+          toValue: 0.8,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValues[elementId], {
+          toValue: 1.1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValues[elementId], {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  };
+
+  // Función para obtener las mejores opciones basadas en puntuaciones de estilo
+  const getBestOptionsForCategory = (category: string, maxOptions: number = 3): SubcategoryOption[] => {
+    const categoryConfig = subcategoryQuestions[category];
+    if (!categoryConfig || categoryConfig.selectionType === 'single') {
+      return categoryConfig.options;
+    }
+
+    const styleScores = state.styleScores;
+    
+    // Para capa exterior, usar lógica más inteligente
+    if (category === 'capaExterior') {
+      return getBestCapaOptions(styleScores, categoryConfig.options, maxOptions);
+    }
+
+    // Para zapatos, mantener lógica original
+    const optionsWithScores = categoryConfig.options.map(option => {
+      let totalScore = 0;
+      let matchCount = 0;
+      
+      if (option.styleMapping) {
+        option.styleMapping.forEach(styleName => {
+          const styleScore = styleScores.find(s => s.styleName === styleName);
+          if (styleScore) {
+            totalScore += styleScore.averageScore;
+            matchCount++;
+          }
+        });
+      }
+      
+      return {
+        ...option,
+        calculatedScore: matchCount > 0 ? totalScore / matchCount : 0
+      };
+    });
+
+    // Ordenar por puntuación y tomar las mejores
+    return optionsWithScores
+      .sort((a, b) => b.calculatedScore - a.calculatedScore)
+      .slice(0, maxOptions)
+      .map(({ calculatedScore, ...option }) => option);
+  };
+
+  // Lógica especializada para capa exterior
+  const getBestCapaOptions = (styleScores: any[], options: SubcategoryOption[], maxOptions: number): SubcategoryOption[] => {
+    // Obtener los top 3 estilos del usuario
+    const topStyles = styleScores
+      .sort((a, b) => b.averageScore - a.averageScore)
+      .slice(0, 3)
+      .map(s => s.styleName);
+
+    // Interfaz temporal para opciones con puntuación
+    interface ScoredOption extends SubcategoryOption {
+      calculatedScore: number;
+      hasTopStyle: boolean;
+      relevantStylesCount: number;
+    }
+
+    // Calcular puntuación para cada opción de capa
+    const optionsWithScores: ScoredOption[] = options.map(option => {
+      let score = 0;
+      let relevantStylesCount = 0;
+      let hasTopStyle = false;
+
+      if (option.styleMapping) {
+        option.styleMapping.forEach(styleName => {
+          const styleScore = styleScores.find(s => s.styleName === styleName);
+          if (styleScore) {
+            // Dar más peso a los estilos top del usuario
+            const isTopStyle = topStyles.includes(styleName);
+            const weight = isTopStyle ? 1.5 : 1;
+            score += styleScore.averageScore * weight;
+            relevantStylesCount++;
+            
+            if (isTopStyle) {
+              hasTopStyle = true;
+            }
+          }
+        });
+      }
+
+      // Bonificación por tener al menos un estilo top
+      if (hasTopStyle) {
+        score += 0.5;
+      }
+
+      // Penalización por tener demasiados estilos (preferir opciones más específicas)
+      if (option.styleMapping && option.styleMapping.length > 3) {
+        score -= 0.2;
+      }
+
+      return {
+        ...option,
+        calculatedScore: relevantStylesCount > 0 ? score / relevantStylesCount : 0,
+        hasTopStyle,
+        relevantStylesCount
+      };
+    });
+
+    // Ordenar priorizando:
+    // 1. Opciones que tienen estilos top del usuario
+    // 2. Mayor puntuación calculada
+    // 3. Menos estilos múltiples (más específicas)
+    const sortedOptions = optionsWithScores.sort((a, b) => {
+      // Priorizar opciones con estilos top
+      if (a.hasTopStyle && !b.hasTopStyle) return -1;
+      if (!a.hasTopStyle && b.hasTopStyle) return 1;
+      
+      // Luego por puntuación
+      if (Math.abs(a.calculatedScore - b.calculatedScore) > 0.1) {
+        return b.calculatedScore - a.calculatedScore;
+      }
+      
+      // Finalmente, preferir opciones más específicas
+      return a.relevantStylesCount - b.relevantStylesCount;
+    });
+
+    // Evitar duplicación de estilos ya cubiertos
+    const selectedOptions: ScoredOption[] = [];
+    const coveredStyles = new Set<string>();
+
+    for (const option of sortedOptions) {
+      if (selectedOptions.length >= maxOptions) break;
+      
+      // Verificar si esta opción agrega valor (nuevos estilos no cubiertos)
+      const newStyles = option.styleMapping?.filter(style => !coveredStyles.has(style)) || [];
+      
+      if (newStyles.length > 0 || selectedOptions.length === 0) {
+        selectedOptions.push(option);
+        option.styleMapping?.forEach(style => coveredStyles.add(style));
+      }
+    }
+
+    // Si no tenemos suficientes, agregar las mejores restantes
+    if (selectedOptions.length < maxOptions) {
+      const remaining = sortedOptions.filter(opt => !selectedOptions.includes(opt));
+      selectedOptions.push(...remaining.slice(0, maxOptions - selectedOptions.length));
+    }
+
+    // Convertir de vuelta a SubcategoryOption
+    return selectedOptions.map(({ calculatedScore, hasTopStyle, relevantStylesCount, ...option }) => option);
+  };
+
+  const handleFinishPriorities = (): void => {
+    if (Object.keys(lookPriorities).length !== 4) {
+      showAlert(
+        'Selección incompleta',
+        'Por favor, ordena todos los elementos del look del 1 al 4 según tu preferencia.'
+      );
+      return;
+    }
+
+    // Guardar las prioridades del look
+    dispatch({
+      type: 'ADD_LOOK_PRIORITIES',
+      payload: {
+        priorities: lookPriorities,
+        timestamp: Date.now(),
+      },
+    });
+
+    // Crear orden de subcategorías basado en las prioridades
+    const orderedCategories = [1, 2, 3, 4].map(priority => {
+      const categoryId = Object.keys(lookPriorities).find(
+        key => lookPriorities[key] === priority
+      );
+      return categoryId;
+    }).filter(Boolean) as string[];
+
+    setSubcategoryOrder(orderedCategories);
+    setShowLookPriorityQuestion(false);
+    setShowSubcategoryQuestions(true);
+    setCurrentSubcategoryIndex(0);
+  };
+
+  const handleSubcategorySelection = (categoryId: string, optionId: string): void => {
+    const categoryConfig = subcategoryQuestions[categoryId];
+    const currentSelections = subcategorySelections[categoryId] || [];
+    
+    if (categoryConfig.selectionType === 'single') {
+      // Para selección única, reemplazar
+      setSubcategorySelections(prev => ({
+        ...prev,
+        [categoryId]: [optionId]
+      }));
+    } else {
+      // Para selección múltiple
+      const isSelected = currentSelections.includes(optionId);
+      let newSelections: string[];
+      
+      if (isSelected) {
+        newSelections = currentSelections.filter(id => id !== optionId);
+      } else {
+        const maxSelections = categoryConfig.maxSelections || 3;
+        if (currentSelections.length < maxSelections) {
+          newSelections = [...currentSelections, optionId];
+        } else {
+          return; // No agregar más si ya llegó al límite
+        }
+      }
+      
+      setSubcategorySelections(prev => ({
+        ...prev,
+        [categoryId]: newSelections
+      }));
+    }
+
+    // Animar selección
+    const animatedValue = subcategoryAnimatedValues[categoryId]?.[optionId];
+    if (animatedValue) {
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 0.9,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 1.1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }
+  };
+
+  const handleNextSubcategory = (): void => {
+    const currentCategory = subcategoryOrder[currentSubcategoryIndex];
+    const categoryConfig = subcategoryQuestions[currentCategory];
+    const currentSelections = subcategorySelections[currentCategory] || [];
+    
+    // Validar selección
+    if (categoryConfig.selectionType === 'single' && currentSelections.length === 0) {
+      showAlert('Selección requerida', 'Por favor, selecciona una opción antes de continuar.');
+      return;
+    }
+    
+    if (categoryConfig.selectionType === 'multiple' && currentSelections.length === 0) {
+      showAlert('Selección requerida', 'Por favor, selecciona al menos una opción antes de continuar.');
+      return;
+    }
+
+    // Guardar respuesta en el contexto
+    dispatch({
+      type: 'ADD_SUBCATEGORY_RESPONSE',
+      payload: {
+        category: currentCategory,
+        selections: currentSelections,
+        timestamp: Date.now(),
+      },
+    });
+
+    // Avanzar al siguiente subcuestionario o finalizar
+    if (currentSubcategoryIndex < subcategoryOrder.length - 1) {
+      setCurrentSubcategoryIndex(currentSubcategoryIndex + 1);
+    } else {
+      // Todos los subcuestionarios completados
       showAlert(
         'Cuestionario Completado',
         '¡Felicidades! Has completado todo el proceso. Tu perfil de estilo personalizado está listo.',
@@ -140,23 +744,16 @@ export default function QuestionnaireBlock3Screen() {
           },
         ]
       );
-    } else {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedBrands([]);
     }
   };
 
-  const handleBack = (): void => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedBrands([]);
+  const handleBackSubcategory = (): void => {
+    if (currentSubcategoryIndex > 0) {
+      setCurrentSubcategoryIndex(currentSubcategoryIndex - 1);
     } else {
-      router.back();
+      setShowSubcategoryQuestions(false);
+      setShowLookPriorityQuestion(true);
     }
-  };
-
-  const getBrandColor = (brand: string): string => {
-    return brandColors[brand] || '#7A142C';
   };
 
   if (!fontsLoaded || isLoading) {
@@ -167,11 +764,11 @@ export default function QuestionnaireBlock3Screen() {
     );
   }
 
-  if (brandQuestions.length === 0) {
+  if (unifiedBrands.length === 0) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={styles.errorText}>
-          No se pudieron generar preguntas de marcas. Completa los bloques anteriores.
+          No se pudieron generar marcas. Completa los bloques anteriores.
         </Text>
         <TouchableOpacity style={styles.backToHomeButton} onPress={() => router.push('/(tabs)')}>
           <Text style={styles.backToHomeButtonText}>Volver al inicio</Text>
@@ -180,73 +777,474 @@ export default function QuestionnaireBlock3Screen() {
     );
   }
 
+  // Mostrar la pregunta de prioridades del look
+  if (showLookPriorityQuestion) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" backgroundColor="#FCF6F3" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => setShowLookPriorityQuestion(false)}>
+            <Text style={styles.backButtonText}>← Atrás</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.progressText}>Pregunta Final</Text>
+          <Text style={styles.blockLabel}>Bloque 3</Text>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          {/* Pregunta principal */}
+          <View style={styles.lookQuestionContainer}>
+            <Text style={styles.lookQuestionTitle}>
+              ¿Qué es más importante para ti en tu look?
+            </Text>
+            <Text style={styles.lookQuestionSubtitle}>
+              Ordena del 1 al 4 según tu preferencia (1 = más importante)
+            </Text>
+            
+            {/* Contador de selecciones */}
+            <View style={styles.priorityCounter}>
+              <Text style={styles.priorityCounterText}>
+                {Object.keys(lookPriorities).length}/4 elementos ordenados
+              </Text>
+              {Object.keys(lookPriorities).length > 0 && (
+                <Text style={styles.priorityCounterSubtext}>
+                  {Object.keys(lookPriorities).length < 4 
+                    ? `Faltan ${4 - Object.keys(lookPriorities).length} elementos`
+                    : '¡Perfecto! Todos los elementos ordenados'}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* Grid de elementos del look */}
+          <View style={styles.lookElementsGrid}>
+            {lookElements.map((element) => {
+              const priority = lookPriorities[element.id];
+              const isSelected = priority !== undefined;
+              
+              return (
+                <Animated.View
+                  key={element.id}
+                  style={[
+                    styles.lookElementCard,
+                    isSelected && styles.lookElementCardSelected,
+                    { transform: [{ scale: animatedValues[element.id] }] }
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.lookElementContent}
+                    onPress={() => handleLookElementPress(element.id)}
+                    activeOpacity={0.8}
+                  >
+                    {/* Imagen del elemento */}
+                    <View style={styles.lookElementImageContainer}>
+                      <Image 
+                        source={element.image} 
+                        style={styles.lookElementImage}
+                        resizeMode="cover"
+                      />
+                      {/* Overlay con gradiente para mejor legibilidad */}
+                      <View style={styles.lookElementImageOverlay} />
+                    </View>
+                    
+                    {/* Contenido del elemento */}
+                    <View style={styles.lookElementInfo}>
+                      <Text style={[
+                        styles.lookElementName,
+                        isSelected && styles.lookElementNameSelected
+                      ]}>
+                        {element.displayName}
+                      </Text>
+                      
+                      {/* Indicador de prioridad */}
+                      {isSelected && (
+                        <View style={styles.priorityBadge}>
+                          <Text style={styles.priorityBadgeText}>{priority}</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {/* Efecto de brillo cuando está seleccionado */}
+                    {isSelected && <View style={styles.sparkleEffect} />}
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </View>
+
+          {/* Resumen de selecciones */}
+          {Object.keys(lookPriorities).length > 0 && (
+            <View style={styles.prioritySummary}>
+              <Text style={styles.prioritySummaryTitle}>Tu orden de preferencia:</Text>
+              {[1, 2, 3, 4].map(priority => {
+                const elementId = Object.keys(lookPriorities).find(
+                  key => lookPriorities[key] === priority
+                );
+                const element = lookElements.find(el => el.id === elementId);
+                
+                if (!element) return null;
+                
+                return (
+                  <View key={priority} style={styles.prioritySummaryItem}>
+                    <View style={styles.prioritySummaryNumber}>
+                      <Text style={styles.prioritySummaryNumberText}>{priority}</Text>
+                    </View>
+                    <Text style={styles.prioritySummaryText}>{element.displayName}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Instrucciones */}
+          <View style={styles.lookInstructionsContainer}>
+            <Text style={styles.lookInstructionsText}>
+              Toca cada elemento para establecer el orden de importancia
+            </Text>
+            <Text style={styles.lookInstructionsSubtext}>
+              Puedes tocar de nuevo para cambiar el orden
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Botón finalizar */}
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.finishButton, 
+              Object.keys(lookPriorities).length !== 4 && styles.finishButtonDisabled
+            ]}
+            onPress={handleFinishPriorities}
+            disabled={Object.keys(lookPriorities).length !== 4}
+          >
+            <Text style={[
+              styles.finishButtonText,
+              Object.keys(lookPriorities).length !== 4 && styles.finishButtonTextDisabled
+            ]}>
+              ✨ Finalizar Cuestionario ✨
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Mostrar subcuestionarios
+  if (showSubcategoryQuestions && subcategoryOrder.length > 0) {
+    const currentCategory = subcategoryOrder[currentSubcategoryIndex];
+    const categoryConfig = subcategoryQuestions[currentCategory];
+    const availableOptions = getBestOptionsForCategory(currentCategory);
+    const currentSelections = subcategorySelections[currentCategory] || [];
+    const isLastSubcategory = currentSubcategoryIndex === subcategoryOrder.length - 1;
+
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" backgroundColor="#FCF6F3" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBackSubcategory}>
+            <Text style={styles.backButtonText}>← Atrás</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.progressText}>
+            {currentSubcategoryIndex + 1} de {subcategoryOrder.length}
+          </Text>
+          <Text style={styles.blockLabel}>Subcategorías</Text>
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+          {/* Pregunta del subcuestionario */}
+          <View style={styles.subcategoryQuestionContainer}>
+            <Text style={styles.subcategoryQuestionTitle}>
+              {categoryConfig.selectionType === 'single' 
+                ? `¿Qué tipo de ${categoryConfig.categoryDisplayName.toLowerCase()} prefieres?`
+                : `¿Cuáles son tus ${categoryConfig.categoryDisplayName.toLowerCase()} favoritos?`
+              }
+            </Text>
+            <Text style={styles.subcategoryQuestionSubtitle}>
+              Categoría: {categoryConfig.categoryDisplayName}
+            </Text>
+            
+            {/* Indicador de prioridad */}
+            <View style={styles.priorityIndicator}>
+              <Text style={styles.priorityIndicatorText}>
+                Prioridad #{currentSubcategoryIndex + 1} en tu look
+              </Text>
+            </View>
+            
+            {/* Contador de selecciones */}
+            <View style={styles.subcategoryCounter}>
+              {categoryConfig.selectionType === 'single' ? (
+                <Text style={styles.subcategoryCounterText}>
+                  {currentSelections.length > 0 ? '1/1 seleccionado' : 'Selecciona una opción'}
+                </Text>
+              ) : (
+                <>
+                  <Text style={styles.subcategoryCounterText}>
+                    {currentSelections.length}/{categoryConfig.maxSelections || 3} seleccionados
+                  </Text>
+                  {categoryConfig.selectionType === 'multiple' && (
+                    <Text style={styles.subcategoryCounterSubtext}>
+                      {currentSelections.length === 0 
+                        ? 'Selecciona al menos una opción'
+                        : `Puedes seleccionar hasta ${(categoryConfig.maxSelections || 3) - currentSelections.length} más`
+                      }
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+          </View>
+
+          {/* Grid de opciones */}
+          <View style={styles.subcategoryOptionsGrid}>
+            {availableOptions.map((option) => {
+              const isSelected = currentSelections.includes(option.id);
+              const isDisabled = categoryConfig.selectionType === 'multiple' && 
+                                 currentSelections.length >= (categoryConfig.maxSelections || 3) && 
+                                 !isSelected;
+              
+              return (
+                <Animated.View
+                  key={option.id}
+                  style={[
+                    styles.subcategoryOptionCard,
+                    isSelected && styles.subcategoryOptionCardSelected,
+                    isDisabled && styles.subcategoryOptionCardDisabled,
+                    { transform: [{ scale: subcategoryAnimatedValues[currentCategory]?.[option.id] || new Animated.Value(1) }] }
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.subcategoryOptionContent}
+                    onPress={() => handleSubcategorySelection(currentCategory, option.id)}
+                    disabled={isDisabled}
+                    activeOpacity={0.8}
+                  >
+                    {/* Imagen de la opción */}
+                    <View style={styles.subcategoryOptionImageContainer}>
+                      <Image 
+                        source={option.image} 
+                        style={styles.subcategoryOptionImage}
+                        resizeMode="cover"
+                      />
+                      {/* Overlay para mejor legibilidad */}
+                      <View style={styles.subcategoryOptionImageOverlay} />
+                    </View>
+                    
+                    {/* Información de la opción */}
+                    <View style={styles.subcategoryOptionInfo}>
+                      <Text style={[
+                        styles.subcategoryOptionName,
+                        isSelected && styles.subcategoryOptionNameSelected
+                      ]}>
+                        {option.displayName}
+                      </Text>
+                      
+                      {/* Mostrar estilos para capa exterior */}
+                      {currentCategory === 'capaExterior' && option.styleMapping && (
+                        <View style={styles.styleTagsContainer}>
+                          {option.styleMapping.slice(0, 3).map((styleName, index) => (
+                            <View key={styleName} style={styles.styleTag}>
+                              <Text style={styles.styleTagText}>
+                                {styleName}
+                              </Text>
+                            </View>
+                          ))}
+                          {option.styleMapping.length > 3 && (
+                            <View style={styles.styleTag}>
+                              <Text style={styles.styleTagText}>
+                                +{option.styleMapping.length - 3}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                      
+                      {/* Indicador de selección */}
+                      {isSelected && (
+                        <View style={styles.subcategorySelectedBadge}>
+                          <Text style={styles.subcategorySelectedBadgeText}>✓</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {/* Efecto de brillo cuando está seleccionado */}
+                    {isSelected && <View style={styles.subcategorySparkleEffect} />}
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </View>
+
+          {/* Información sobre la selección basada en puntuaciones */}
+          {categoryConfig.selectionType === 'multiple' && (
+            <View style={styles.styleScoreInfo}>
+              <Text style={styles.styleScoreInfoTitle}>
+                ✨ Opciones recomendadas para ti
+              </Text>
+              <Text style={styles.styleScoreInfoText}>
+                {currentCategory === 'capaExterior' 
+                  ? 'Estas opciones de capa exterior se seleccionaron basándose en tus estilos favoritos, priorizando las que mejor coinciden con tu perfil y evitando duplicaciones.'
+                  : 'Estas opciones se seleccionaron basándose en tus respuestas anteriores y las puntuaciones de tus estilos favoritos.'
+                }
+              </Text>
+            </View>
+          )}
+
+          {/* Resumen de selecciones */}
+          {currentSelections.length > 0 && (
+            <View style={styles.subcategorySelectionSummary}>
+              <Text style={styles.subcategorySelectionSummaryTitle}>
+                Tu selección actual:
+              </Text>
+              <View style={styles.subcategorySelectionList}>
+                {currentSelections.map((selectionId, index) => {
+                  const option = availableOptions.find(opt => opt.id === selectionId);
+                  if (!option) return null;
+                  
+                  return (
+                    <View key={selectionId} style={styles.subcategorySelectionItem}>
+                      <View style={styles.subcategorySelectionNumber}>
+                        <Text style={styles.subcategorySelectionNumberText}>{index + 1}</Text>
+                      </View>
+                      <Text style={styles.subcategorySelectionText}>{option.displayName}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Instrucciones */}
+          <View style={styles.subcategoryInstructionsContainer}>
+            <Text style={styles.subcategoryInstructionsText}>
+              {categoryConfig.selectionType === 'single' 
+                ? 'Toca la opción que más te guste'
+                : 'Toca las opciones que más te gusten (máximo 3)'
+              }
+            </Text>
+            <Text style={styles.subcategoryInstructionsSubtext}>
+              Puedes cambiar tu selección tocando de nuevo
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Botón siguiente */}
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.subcategoryNextButton, 
+              currentSelections.length === 0 && styles.subcategoryNextButtonDisabled
+            ]}
+            onPress={handleNextSubcategory}
+            disabled={currentSelections.length === 0}
+          >
+            <Text style={[
+              styles.subcategoryNextButtonText,
+              currentSelections.length === 0 && styles.subcategoryNextButtonTextDisabled
+            ]}>
+              {isLastSubcategory ? '✨ Finalizar Cuestionario ✨' : `Siguiente: ${subcategoryOrder[currentSubcategoryIndex + 1] ? subcategoryQuestions[subcategoryOrder[currentSubcategoryIndex + 1]]?.categoryDisplayName : 'Siguiente'}`}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" backgroundColor="#FCF6F3" />
       
-      {/* Header con progreso */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backButtonText}>← Atrás</Text>
         </TouchableOpacity>
         
         <Text style={styles.progressText}>
-          {currentQuestionIndex + 1} de {brandQuestions.length}
+          Marcas Favoritas
         </Text>
         
         <Text style={styles.blockLabel}>Bloque 3</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-        {/* Pregunta */}
+        {/* Pregunta unificada */}
         <View style={styles.questionContainer}>
           <Text style={styles.questionText}>
-            ¿Qué marcas te gustan para el estilo {currentQuestion.styleName}?
+            ¿Cuáles son tus marcas favoritas?
           </Text>
-          <Text style={styles.styleLabel}>Estilo: {currentQuestion.styleName}</Text>
+          <Text style={styles.styleLabel}>
+            Basado en tus estilos preferidos: {topStylesInfo.join(', ')}
+          </Text>
           
           {/* Contador de selecciones */}
           <View style={styles.selectionCounter}>
             <Text style={styles.counterText}>
-              {selectedBrands.length}/3 marcas seleccionadas
+              {selectedBrands.length}/5 marcas seleccionadas
             </Text>
             {selectedBrands.length > 0 && (
               <Text style={styles.counterSubtext}>
                 {selectedBrands.length < 2 
                   ? `Necesitas al menos ${2 - selectedBrands.length} más` 
-                  : selectedBrands.length < 3 
-                    ? `Puedes seleccionar ${3 - selectedBrands.length} más`
+                  : selectedBrands.length < 5 
+                    ? `Puedes seleccionar ${5 - selectedBrands.length} más`
                     : 'Máximo alcanzado'}
               </Text>
             )}
           </View>
         </View>
 
-        {/* Grid de marcas */}
+        {/* Información sobre puntuaciones */}
+        <View style={styles.brandScoreInfo}>
+          <Text style={styles.brandScoreInfoTitle}>
+            ✨ Sistema de Puntuación Inteligente
+          </Text>
+          <Text style={styles.brandScoreInfoText}>
+            Las marcas están organizadas por puntuación: Las únicas en tu estilo valen más puntos que las que aparecen en múltiples estilos.
+          </Text>
+        </View>
+
+        {/* Grid de marcas unificadas */}
         <View style={styles.brandsGrid}>
-          {currentQuestion.availableBrands.map((brand, index) => (
+          {unifiedBrands.map((brandData, index) => (
             <TouchableOpacity
-              key={`${brand}-${index}`}
+              key={`${brandData.brandName}-${index}`}
               style={[
                 styles.brandCard,
-                selectedBrands.includes(brand) && styles.brandCardSelected,
-                selectedBrands.length >= 3 && !selectedBrands.includes(brand) && styles.brandCardDisabled
+                selectedBrands.includes(brandData.brandName) && styles.brandCardSelected,
+                selectedBrands.length >= 5 && !selectedBrands.includes(brandData.brandName) && styles.brandCardDisabled
               ]}
-              onPress={() => handleBrandToggle(brand)}
-              disabled={selectedBrands.length >= 3 && !selectedBrands.includes(brand)}
+              onPress={() => handleUnifiedBrandToggle(brandData.brandName)}
+              disabled={selectedBrands.length >= 5 && !selectedBrands.includes(brandData.brandName)}
             >
-              <View style={[styles.brandIcon, { backgroundColor: getBrandColor(brand) }]}>
+              <View style={[styles.brandIcon, { backgroundColor: getBrandColor(brandData.brandName) }]}>
                 <Text style={styles.brandInitials}>
-                  {brand.split(' ').map(word => word[0]).join('').toUpperCase()}
+                  {brandData.brandName.split(' ').map((word: string) => word[0]).join('').toUpperCase()}
                 </Text>
               </View>
               <Text style={[
                 styles.brandName,
-                selectedBrands.includes(brand) && styles.brandNameSelected
+                selectedBrands.includes(brandData.brandName) && styles.brandNameSelected
               ]}>
-                {brand}
+                {brandData.brandName}
               </Text>
-              {selectedBrands.includes(brand) && (
+              
+              {/* Indicador de puntuación */}
+              <View style={[styles.scoreBadge, { backgroundColor: brandData.score === 3 ? '#FFD700' : brandData.score === 2 ? '#C0C0C0' : '#CD7F32' }]}>
+                <Text style={styles.scoreBadgeText}>{brandData.score}pts</Text>
+              </View>
+              
+              {/* Información de estilos */}
+              <Text style={styles.brandStyles}>
+                {brandData.styles.slice(0, 2).join(', ')}
+                {brandData.styles.length > 2 && '...'}
+              </Text>
+              
+              {selectedBrands.includes(brandData.brandName) && (
                 <View style={styles.selectedBadge}>
                   <Text style={styles.selectedBadgeText}>✓</Text>
                 </View>
@@ -255,13 +1253,38 @@ export default function QuestionnaireBlock3Screen() {
           ))}
         </View>
 
+        {/* Resumen de selecciones */}
+        {selectedBrands.length > 0 && (
+          <View style={styles.selectionSummary}>
+            <Text style={styles.selectionSummaryTitle}>
+              Tu selección actual:
+            </Text>
+            <View style={styles.selectionList}>
+              {selectedBrands.map((brandName, index) => {
+                const brandData = unifiedBrands.find(b => b.brandName === brandName);
+                return (
+                  <View key={brandName} style={styles.selectionItem}>
+                    <View style={styles.selectionNumber}>
+                      <Text style={styles.selectionNumberText}>{index + 1}</Text>
+                    </View>
+                    <Text style={styles.selectionText}>{brandName}</Text>
+                    {brandData && (
+                      <Text style={styles.selectionScore}>({brandData.score}pts)</Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Instrucciones */}
         <View style={styles.instructionsContainer}>
           <Text style={styles.instructionsText}>
-            Selecciona entre 2 y 3 marcas que te gusten para este estilo
+            Selecciona entre 2 y 5 marcas que más te gusten
           </Text>
           <Text style={styles.instructionsSubtext}>
-            Toca una marca para seleccionar/deseleccionar
+            Las marcas con mayor puntuación son más específicas de tus estilos favoritos
           </Text>
         </View>
       </ScrollView>
@@ -270,11 +1293,11 @@ export default function QuestionnaireBlock3Screen() {
       <View style={styles.bottomContainer}>
         <TouchableOpacity 
           style={[styles.nextButton, selectedBrands.length < 2 && styles.nextButtonDisabled]} 
-          onPress={handleNext}
+          onPress={handleUnifiedBrandsSubmit}
           disabled={selectedBrands.length < 2}
         >
           <Text style={[styles.nextButtonText, selectedBrands.length < 2 && styles.nextButtonTextDisabled]}>
-            {isLastQuestion ? 'Finalizar Cuestionario' : 'Siguiente Estilo'}
+            Continuar con Look
           </Text>
         </TouchableOpacity>
       </View>
@@ -515,5 +1538,664 @@ const styles = StyleSheet.create({
     color: '#FCF6F3',
     fontSize: 16,
     fontWeight: '600',
+  },
+  lookQuestionContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  lookQuestionTitle: {
+    fontSize: 22,
+    fontFamily: 'Castio-Regular',
+    color: '#7A142C',
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 28,
+  },
+  lookQuestionSubtitle: {
+    fontSize: 16,
+    fontFamily: 'System',
+    color: '#4D6F62',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  priorityCounter: {
+    alignItems: 'center',
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  priorityCounterText: {
+    fontSize: 16,
+    color: '#7A142C',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  priorityCounterSubtext: {
+    fontSize: 12,
+    color: '#4D6F62',
+    fontStyle: 'italic',
+  },
+  lookElementsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 30,
+    gap: 15,
+  },
+  lookElementCard: {
+    width: (width - 70) / 2,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+    marginBottom: 15,
+  },
+  lookElementCardSelected: {
+    borderColor: '#7A142C',
+    shadowOpacity: 0.3,
+    elevation: 8,
+    backgroundColor: '#f8f9fa',
+  },
+  lookElementContent: {
+    padding: 15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  lookElementImageContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: 15,
+    position: 'relative',
+  },
+  lookElementImage: {
+    width: '100%',
+    height: '100%',
+  },
+  lookElementImageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  lookElementInfo: {
+    alignItems: 'center',
+    position: 'relative',
+    width: '100%',
+  },
+  lookElementName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  lookElementNameSelected: {
+    color: '#7A142C',
+  },
+  priorityBadge: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: '#7A142C',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  priorityBadgeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  sparkleEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 20,
+  },
+  prioritySummary: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  prioritySummaryTitle: {
+    fontSize: 18,
+    color: '#7A142C',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+  prioritySummaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingVertical: 5,
+  },
+  prioritySummaryNumber: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#7A142C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  prioritySummaryNumberText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  prioritySummaryText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  lookInstructionsContainer: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+  },
+  lookInstructionsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    fontWeight: '500',
+    marginBottom: 5,
+  },
+  lookInstructionsSubtext: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  finishButton: {
+    backgroundColor: '#7A142C',
+    paddingVertical: 18,
+    borderRadius: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  finishButtonDisabled: {
+    backgroundColor: '#ccc',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  finishButtonText: {
+    color: '#FCF6F3',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'System',
+  },
+  finishButtonTextDisabled: {
+    color: '#999',
+  },
+  subcategorySparkleEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 20,
+  },
+  subcategoryQuestionContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  subcategoryQuestionTitle: {
+    fontSize: 22,
+    fontFamily: 'Castio-Regular',
+    color: '#7A142C',
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 28,
+  },
+  subcategoryQuestionSubtitle: {
+    fontSize: 16,
+    fontFamily: 'System',
+    color: '#4D6F62',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  priorityIndicator: {
+    alignItems: 'center',
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  priorityIndicatorText: {
+    fontSize: 16,
+    color: '#7A142C',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  subcategoryCounter: {
+    alignItems: 'center',
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  subcategoryCounterText: {
+    fontSize: 16,
+    color: '#7A142C',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  subcategoryCounterSubtext: {
+    fontSize: 12,
+    color: '#4D6F62',
+    fontStyle: 'italic',
+  },
+  subcategoryOptionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 30,
+    gap: 15,
+  },
+  subcategoryOptionCard: {
+    width: (width - 70) / 2,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+    marginBottom: 15,
+  },
+  subcategoryOptionCardSelected: {
+    borderColor: '#7A142C',
+    shadowOpacity: 0.3,
+    elevation: 8,
+    backgroundColor: '#f8f9fa',
+  },
+  subcategoryOptionCardDisabled: {
+    opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  subcategoryOptionContent: {
+    padding: 15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  subcategoryOptionImageContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: 15,
+    position: 'relative',
+  },
+  subcategoryOptionImage: {
+    width: '100%',
+    height: '100%',
+  },
+  subcategoryOptionImageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  subcategoryOptionInfo: {
+    alignItems: 'center',
+    position: 'relative',
+    width: '100%',
+  },
+  subcategoryOptionName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  subcategoryOptionNameSelected: {
+    color: '#7A142C',
+  },
+  styleTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  styleTag: {
+    backgroundColor: '#E8F4FD',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginHorizontal: 2,
+    marginVertical: 1,
+    borderWidth: 1,
+    borderColor: '#4D6F62',
+  },
+  styleTagText: {
+    fontSize: 10,
+    color: '#4D6F62',
+    fontWeight: '600',
+  },
+  subcategorySelectedBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#7A142C',
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subcategorySelectedBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  styleScoreInfo: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+  },
+  styleScoreInfoTitle: {
+    fontSize: 18,
+    color: '#7A142C',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+  styleScoreInfoText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  subcategorySelectionSummary: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+  },
+  subcategorySelectionSummaryTitle: {
+    fontSize: 18,
+    color: '#7A142C',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+  subcategorySelectionList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  subcategorySelectionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  subcategorySelectionNumber: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#7A142C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  subcategorySelectionNumberText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  subcategorySelectionText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  subcategoryInstructionsContainer: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+  },
+  subcategoryInstructionsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    fontWeight: '500',
+    marginBottom: 5,
+  },
+  subcategoryInstructionsSubtext: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  subcategoryNextButton: {
+    backgroundColor: '#7A142C',
+    paddingVertical: 18,
+    borderRadius: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  subcategoryNextButtonDisabled: {
+    backgroundColor: '#ccc',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  subcategoryNextButtonText: {
+    color: '#FCF6F3',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'System',
+  },
+  subcategoryNextButtonTextDisabled: {
+    color: '#999',
+  },
+  brandScoreInfo: {
+    marginTop: 20,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  brandScoreInfoTitle: {
+    fontSize: 18,
+    color: '#7A142C',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  brandScoreInfoText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  scoreBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 35,
+  },
+  scoreBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  brandStyles: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
+    fontStyle: 'italic',
+    lineHeight: 14,
+  },
+  selectionSummary: {
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FAA6B5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  selectionSummaryTitle: {
+    fontSize: 18,
+    color: '#7A142C',
+    textAlign: 'center',
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+  selectionList: {
+    flexDirection: 'column',
+  },
+  selectionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingVertical: 5,
+  },
+  selectionNumber: {
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
+    backgroundColor: '#7A142C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  selectionNumberText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  selectionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  selectionScore: {
+    fontSize: 14,
+    color: '#4D6F62',
+    fontWeight: '600',
+    marginLeft: 8,
   },
 }); 

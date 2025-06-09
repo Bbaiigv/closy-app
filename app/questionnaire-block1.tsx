@@ -24,15 +24,15 @@ const { width, height } = Dimensions.get('window');
 
 // Importar las imágenes de forma segura
 const styleImages = {
-  basica: require('../assets/Bloque1_onboarding/Basica.png'),
-  boho: require('../assets/Bloque1_onboarding/Boho.png'),
-  cayetanaMenos20: require('../assets/Bloque1_onboarding/Cayetana-20.png'),
-  cayetanaMas20: require('../assets/Bloque1_onboarding/Cayetana_20.png'),
-  formalClasica: require('../assets/Bloque1_onboarding/Formal_clasica.png'),
-  modernaTrendy: require('../assets/Bloque1_onboarding/Moderna_trendy.png'),
-  pija: require('../assets/Bloque1_onboarding/Pija.png'),
-  sexy: require('../assets/Bloque1_onboarding/Sexy.png'),
-  st: require('../assets/Bloque1_onboarding/ST.png'),
+  basica: require('../assets/images/PrimerCuestionario/Basica.png'),
+  boho: require('../assets/images/PrimerCuestionario/Boho.png'),
+  cayetanaMenos20: require('../assets/images/PrimerCuestionario/Cayetana-20.png'),
+  cayetanaMas20: require('../assets/images/PrimerCuestionario/Cayetana20.png'),
+  formalClasica: require('../assets/images/PrimerCuestionario/Formal_Clasica.png'),
+  modernaTrendy: require('../assets/images/PrimerCuestionario/Moderna_trendy.png'),
+  pija: require('../assets/images/PrimerCuestionario/Pija.png'),
+  sexy: require('../assets/images/PrimerCuestionario/Sexy.png'),
+  st: require('../assets/images/PrimerCuestionario/ST.png'),
 };
 
 const styleQuestions: StyleQuestion[] = [
