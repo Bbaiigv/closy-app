@@ -131,8 +131,18 @@ export default function QuestionnaireBlock2Screen() {
   useEffect(() => {
     // Obtener los 4 mejores estilos del bloque anterior
     const getTopStyles = () => {
+      // Verificar que el usuario haya completado el bloque 1
+      if (state.styleScores.length === 0) {
+        showAlert(
+          'Bloque anterior incompleto',
+          'Necesitas completar el primer bloque antes de continuar.',
+          [{ text: 'OK', onPress: () => router.push('./questionnaire-block1') }]
+        );
+        return;
+      }
+
       const filteredStyles = getFilteredTopStyles(state.styleScores, {
-        minScore: 2.5, // Reducimos un poco el mínimo para asegurar que tengamos 4 estilos
+        minScore: 4, // Ajustado para sistema de puntos 
         maxResults: 4
       });
 
@@ -140,7 +150,7 @@ export default function QuestionnaireBlock2Screen() {
         showAlert(
           'Bloque anterior incompleto',
           'Necesitas completar el primer bloque con al menos 3 estilos bien valorados antes de continuar.',
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: () => router.push('./questionnaire-block1') }]
         );
         return;
       }
@@ -199,23 +209,29 @@ export default function QuestionnaireBlock2Screen() {
     selectedStyleIndexes.forEach((styleIndex, position) => {
       const selectedStyle = topStyles[styleIndex];
       
+      // Sistema de puntuación: cada selección suma 2 puntos
+      const points = 2; // Todos los estilos seleccionados valen 2 puntos
+      
       dispatch({
         type: 'ADD_QUESTIONNAIRE_RESPONSE',
         payload: {
           questionId: currentQuestion.id * 1000 + styleIndex + 2000, // ID único para cada selección
-          response: position + 1, // Orden de preferencia (1-3)
-          styleName: `${selectedStyle.styleName} (${currentQuestion.occasion})`,
+          response: points,
+          styleName: selectedStyle.styleName, // Usar nombre directo del estilo
         },
       });
     });
 
     if (isLastQuestion) {
+      // Actualizar bloque actual
+      dispatch({ type: 'SET_CURRENT_BLOCK', payload: 3 });
+      
       showAlert(
         'Bloque 2 Completado',
         '¡Excelente! Has completado la selección de outfits por ocasión. ¿Quieres continuar con la selección de marcas?',
         [
           {
-            text: 'Ir a marcas',
+            text: 'Continuar al Bloque 3',
             onPress: () => {
               router.push('./questionnaire-block3');
             },

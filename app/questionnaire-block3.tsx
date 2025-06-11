@@ -173,14 +173,14 @@ const subcategoryQuestions: { [key: string]: SubcategoryQuestion } = {
         name: 'formal',
         image: require('../assets/images/TercerCuestionario/zapatos/formal.png'),
         displayName: 'Formal',
-        styleMapping: ['Formal']
+        styleMapping: ['Formal Clásica']
       },
       {
         id: 'trendy',
         name: 'trendy',
         image: require('../assets/images/TercerCuestionario/zapatos/trendy.png'),
         displayName: 'Trendy',
-        styleMapping: ['Trendy']
+        styleMapping: ['Moderna Trendy']
       },
       {
         id: 'basica',
@@ -201,7 +201,7 @@ const subcategoryQuestions: { [key: string]: SubcategoryQuestion } = {
         name: 'streetwear',
         image: require('../assets/images/TercerCuestionario/zapatos/streetwear.png'),
         displayName: 'Streetwear',
-        styleMapping: ['Streetwear']
+        styleMapping: ['ST']
       },
       {
         id: 'pija',
@@ -215,7 +215,14 @@ const subcategoryQuestions: { [key: string]: SubcategoryQuestion } = {
         name: 'caye-20',
         image: require('../assets/images/TercerCuestionario/zapatos/caye-20.png'),
         displayName: 'Caye-20',
-        styleMapping: ['Caye-20']
+        styleMapping: ['Cayetana -20']
+      },
+      {
+        id: 'caye20',
+        name: 'caye20',
+        image: require('../assets/images/TercerCuestionario/zapatos/caye-20.png'),
+        displayName: 'Caye+20',
+        styleMapping: ['Cayetana +20']
       }
     ]
   },
@@ -237,35 +244,35 @@ const subcategoryQuestions: { [key: string]: SubcategoryQuestion } = {
         name: 'formal-caye20-pija-sexy',
         image: require('../assets/images/TercerCuestionario/capa/formal-Caye20-Pija-Sexy.png'),
         displayName: 'Formal/Elegante',
-        styleMapping: ['Formal', 'Caye-20', 'Pija', 'Sexy']
+        styleMapping: ['Formal Clásica', 'Cayetana -20', 'Cayetana +20', 'Pija', 'Sexy']
       },
       {
         id: 'basica-st-trendy',
         name: 'basica-st-trendy',
         image: require('../assets/images/TercerCuestionario/capa/basica-ST-Trendy.png'),
         displayName: 'Básica/Trendy',
-        styleMapping: ['Básica', 'Streetwear', 'Trendy']
+        styleMapping: ['Básica', 'ST', 'Moderna Trendy']
       },
       {
         id: 'pija-formal',
         name: 'pija-formal',
         image: require('../assets/images/TercerCuestionario/capa/pija-Formal.png'),
         displayName: 'Pija/Formal',
-        styleMapping: ['Pija', 'Formal']
+        styleMapping: ['Pija', 'Formal Clásica']
       },
       {
         id: 'caye20-formal',
         name: 'caye20-formal',
         image: require('../assets/images/TercerCuestionario/capa/caye20-Formal.png'),
         displayName: 'Caye-20/Formal',
-        styleMapping: ['Caye-20', 'Formal']
+        styleMapping: ['Cayetana -20', 'Cayetana +20', 'Formal Clásica']
       },
       {
         id: 'caye-20-pija',
         name: 'caye-20-pija',
         image: require('../assets/images/TercerCuestionario/capa/caye-20-Pija.png'),
         displayName: 'Caye-20/Pija',
-        styleMapping: ['Caye-20', 'Pija']
+        styleMapping: ['Cayetana -20', 'Cayetana +20', 'Pija']
       }
     ]
   }
@@ -340,13 +347,34 @@ export default function QuestionnaireBlock3Screen() {
   useEffect(() => {
     // Generar marcas unificadas basadas en los top 3 estilos
     const generateUnifiedBrands = () => {
+      // Verificar que el usuario haya completado los bloques anteriores
+      if (state.styleScores.length === 0) {
+        showAlert(
+          'Bloques anteriores incompletos',
+          'Necesitas completar los bloques 1 y 2 antes de continuar.',
+          [{ text: 'Ir al Bloque 1', onPress: () => router.push('./questionnaire-block1') }]
+        );
+        return;
+      }
+
+      // Verificar que haya respuestas del bloque 2 (IDs > 2000)
+      const block2Responses = state.questionnaireResponses.filter(r => r.questionId > 2000);
+      if (block2Responses.length === 0) {
+        showAlert(
+          'Bloque 2 incompleto',
+          'Necesitas completar el bloque 2 antes de continuar.',
+          [{ text: 'Ir al Bloque 2', onPress: () => router.push('./questionnaire-block2') }]
+        );
+        return;
+      }
+
       const brandsWithScore = getUnifiedBrandsForTopStyles(state.questionnaireResponses);
       
       if (brandsWithScore.length === 0) {
         showAlert(
-          'Cuestionarios previos incompletos',
-          'Necesitas completar los bloques anteriores antes de continuar.',
-          [{ text: 'OK', onPress: () => router.back() }]
+          'Error en datos',
+          'No se pudieron generar marcas. Verifica que hayas completado los bloques anteriores correctamente.',
+          [{ text: 'Ir al Bloque 2', onPress: () => router.push('./questionnaire-block2') }]
         );
         return;
       }
@@ -399,6 +427,23 @@ export default function QuestionnaireBlock3Screen() {
         topStyles: topStylesInfo,
         timestamp: Date.now(),
       },
+    });
+
+        // Convertir puntuaciones de marcas en puntos de estilo
+    // Sistema: Si marca vale X puntos, cada estilo de esa marca recibe X puntos
+    brandScores.forEach((brandScore) => {
+      const pointsPerStyle = brandScore.finalScore; // Los puntos que indica cada marca
+      
+      brandScore.styles.forEach((styleName) => {
+        dispatch({
+          type: 'ADD_QUESTIONNAIRE_RESPONSE',
+          payload: {
+            questionId: 35000 + Date.now() + Math.random(), // ID único para cada estilo de cada marca
+            response: pointsPerStyle, // Cada estilo recibe todos los puntos de la marca
+            styleName: styleName,
+          },
+        });
+      });
     });
 
     // Continuar a la pregunta de prioridades del look
@@ -472,21 +517,21 @@ export default function QuestionnaireBlock3Screen() {
     }
   };
 
-  // Función para obtener las mejores opciones basadas en puntuaciones de estilo
+  // Función para obtener las mejores opciones basadas en puntuaciones acumuladas
   const getBestOptionsForCategory = (category: string, maxOptions: number = 3): SubcategoryOption[] => {
     const categoryConfig = subcategoryQuestions[category];
-    if (!categoryConfig || categoryConfig.selectionType === 'single') {
+    if (!categoryConfig) {
+      return [];
+    }
+
+    // Para categorías con selección única, devolver todas las opciones
+    if (categoryConfig.selectionType === 'single') {
       return categoryConfig.options;
     }
 
     const styleScores = state.styleScores;
     
-    // Para capa exterior, usar lógica más inteligente
-    if (category === 'capaExterior') {
-      return getBestCapaOptions(styleScores, categoryConfig.options, maxOptions);
-    }
-
-    // Para zapatos, mantener lógica original
+    // Calcular puntuación para cada opción basada en los estilos acumulados
     const optionsWithScores = categoryConfig.options.map(option => {
       let totalScore = 0;
       let matchCount = 0;
@@ -507,112 +552,14 @@ export default function QuestionnaireBlock3Screen() {
       };
     });
 
-    // Ordenar por puntuación y tomar las mejores
+    // Ordenar por puntuación descendente y tomar las mejores
     return optionsWithScores
       .sort((a, b) => b.calculatedScore - a.calculatedScore)
       .slice(0, maxOptions)
       .map(({ calculatedScore, ...option }) => option);
   };
 
-  // Lógica especializada para capa exterior
-  const getBestCapaOptions = (styleScores: any[], options: SubcategoryOption[], maxOptions: number): SubcategoryOption[] => {
-    // Obtener los top 3 estilos del usuario
-    const topStyles = styleScores
-      .sort((a, b) => b.averageScore - a.averageScore)
-      .slice(0, 3)
-      .map(s => s.styleName);
 
-    // Interfaz temporal para opciones con puntuación
-    interface ScoredOption extends SubcategoryOption {
-      calculatedScore: number;
-      hasTopStyle: boolean;
-      relevantStylesCount: number;
-    }
-
-    // Calcular puntuación para cada opción de capa
-    const optionsWithScores: ScoredOption[] = options.map(option => {
-      let score = 0;
-      let relevantStylesCount = 0;
-      let hasTopStyle = false;
-
-      if (option.styleMapping) {
-        option.styleMapping.forEach(styleName => {
-          const styleScore = styleScores.find(s => s.styleName === styleName);
-          if (styleScore) {
-            // Dar más peso a los estilos top del usuario
-            const isTopStyle = topStyles.includes(styleName);
-            const weight = isTopStyle ? 1.5 : 1;
-            score += styleScore.averageScore * weight;
-            relevantStylesCount++;
-            
-            if (isTopStyle) {
-              hasTopStyle = true;
-            }
-          }
-        });
-      }
-
-      // Bonificación por tener al menos un estilo top
-      if (hasTopStyle) {
-        score += 0.5;
-      }
-
-      // Penalización por tener demasiados estilos (preferir opciones más específicas)
-      if (option.styleMapping && option.styleMapping.length > 3) {
-        score -= 0.2;
-      }
-
-      return {
-        ...option,
-        calculatedScore: relevantStylesCount > 0 ? score / relevantStylesCount : 0,
-        hasTopStyle,
-        relevantStylesCount
-      };
-    });
-
-    // Ordenar priorizando:
-    // 1. Opciones que tienen estilos top del usuario
-    // 2. Mayor puntuación calculada
-    // 3. Menos estilos múltiples (más específicas)
-    const sortedOptions = optionsWithScores.sort((a, b) => {
-      // Priorizar opciones con estilos top
-      if (a.hasTopStyle && !b.hasTopStyle) return -1;
-      if (!a.hasTopStyle && b.hasTopStyle) return 1;
-      
-      // Luego por puntuación
-      if (Math.abs(a.calculatedScore - b.calculatedScore) > 0.1) {
-        return b.calculatedScore - a.calculatedScore;
-      }
-      
-      // Finalmente, preferir opciones más específicas
-      return a.relevantStylesCount - b.relevantStylesCount;
-    });
-
-    // Evitar duplicación de estilos ya cubiertos
-    const selectedOptions: ScoredOption[] = [];
-    const coveredStyles = new Set<string>();
-
-    for (const option of sortedOptions) {
-      if (selectedOptions.length >= maxOptions) break;
-      
-      // Verificar si esta opción agrega valor (nuevos estilos no cubiertos)
-      const newStyles = option.styleMapping?.filter(style => !coveredStyles.has(style)) || [];
-      
-      if (newStyles.length > 0 || selectedOptions.length === 0) {
-        selectedOptions.push(option);
-        option.styleMapping?.forEach(style => coveredStyles.add(style));
-      }
-    }
-
-    // Si no tenemos suficientes, agregar las mejores restantes
-    if (selectedOptions.length < maxOptions) {
-      const remaining = sortedOptions.filter(opt => !selectedOptions.includes(opt));
-      selectedOptions.push(...remaining.slice(0, maxOptions - selectedOptions.length));
-    }
-
-    // Convertir de vuelta a SubcategoryOption
-    return selectedOptions.map(({ calculatedScore, hasTopStyle, relevantStylesCount, ...option }) => option);
-  };
 
   const handleFinishPriorities = (): void => {
     if (Object.keys(lookPriorities).length !== 4) {
@@ -727,11 +674,44 @@ export default function QuestionnaireBlock3Screen() {
       },
     });
 
+    // Convertir selecciones en puntos de estilo
+    currentSelections.forEach((optionId) => {
+      const option = categoryConfig.options.find(opt => opt.id === optionId);
+      if (option && option.styleMapping) {
+        // Determinar puntos según la categoría
+        let pointsPerStyle = 0;
+        if (currentCategory === 'zapatos') {
+          pointsPerStyle = 2; // Zapatos suman 2 puntos
+        } else if (currentCategory === 'capaExterior') {
+          pointsPerStyle = 1; // Capas suman 1 punto
+        }
+        // accesorios y base no suman puntos a estilos específicos
+
+        if (pointsPerStyle > 0) {
+          // Para zapatos: 2 puntos para cada estilo mapeado
+          // Para capas: 1 punto para cada estilo mapeado
+          option.styleMapping.forEach((styleName) => {
+            dispatch({
+              type: 'ADD_QUESTIONNAIRE_RESPONSE',
+              payload: {
+                questionId: 30000 + Date.now() + Math.random(), // ID único para cada estilo de cada subcategoría
+                response: pointsPerStyle, // Puntos fijos por categoría
+                styleName: styleName,
+              },
+            });
+          });
+        }
+      }
+    });
+
     // Avanzar al siguiente subcuestionario o finalizar
     if (currentSubcategoryIndex < subcategoryOrder.length - 1) {
       setCurrentSubcategoryIndex(currentSubcategoryIndex + 1);
     } else {
-      // Todos los subcuestionarios completados
+      // Todos los subcuestionarios completados - Marcar onboarding completo
+      dispatch({ type: 'COMPLETE_ONBOARDING' });
+      dispatch({ type: 'SET_CURRENT_BLOCK', payload: 4 }); // Indicar que todo está completo
+      
       showAlert(
         'Cuestionario Completado',
         '¡Felicidades! Has completado todo el proceso. Tu perfil de estilo personalizado está listo.',
@@ -977,30 +957,17 @@ export default function QuestionnaireBlock3Screen() {
             
             {/* Contador de selecciones */}
             <View style={styles.subcategoryCounter}>
-              {categoryConfig.selectionType === 'single' ? (
                 <Text style={styles.subcategoryCounterText}>
-                  {currentSelections.length > 0 ? '1/1 seleccionado' : 'Selecciona una opción'}
-                </Text>
-              ) : (
-                <>
-                  <Text style={styles.subcategoryCounterText}>
-                    {currentSelections.length}/{categoryConfig.maxSelections || 3} seleccionados
-                  </Text>
-                  {categoryConfig.selectionType === 'multiple' && (
-                    <Text style={styles.subcategoryCounterSubtext}>
-                      {currentSelections.length === 0 
-                        ? 'Selecciona al menos una opción'
-                        : `Puedes seleccionar hasta ${(categoryConfig.maxSelections || 3) - currentSelections.length} más`
+                {categoryConfig.selectionType === 'single' 
+                  ? (currentSelections.length > 0 ? '1/1 seleccionado' : 'Selecciona una opción')
+                  : `${currentSelections.length}/${categoryConfig.maxSelections || 3} seleccionados`
                       }
                     </Text>
-                  )}
-                </>
-              )}
             </View>
           </View>
 
-          {/* Grid de opciones */}
-          <View style={styles.subcategoryOptionsGrid}>
+          {/* Lista vertical de opciones */}
+          <View style={styles.subcategoryOptionsList}>
             {availableOptions.map((option) => {
               const isSelected = currentSelections.includes(option.id);
               const isDisabled = categoryConfig.selectionType === 'multiple' && 
@@ -1030,12 +997,9 @@ export default function QuestionnaireBlock3Screen() {
                         style={styles.subcategoryOptionImage}
                         resizeMode="cover"
                       />
-                      {/* Overlay para mejor legibilidad */}
-                      <View style={styles.subcategoryOptionImageOverlay} />
                     </View>
                     
-                    {/* Información de la opción */}
-                    <View style={styles.subcategoryOptionInfo}>
+                    {/* Nombre de la opción */}
                       <Text style={[
                         styles.subcategoryOptionName,
                         isSelected && styles.subcategoryOptionNameSelected
@@ -1043,93 +1007,19 @@ export default function QuestionnaireBlock3Screen() {
                         {option.displayName}
                       </Text>
                       
-                      {/* Mostrar estilos para capa exterior */}
-                      {currentCategory === 'capaExterior' && option.styleMapping && (
-                        <View style={styles.styleTagsContainer}>
-                          {option.styleMapping.slice(0, 3).map((styleName, index) => (
-                            <View key={styleName} style={styles.styleTag}>
-                              <Text style={styles.styleTagText}>
-                                {styleName}
-                              </Text>
-                            </View>
-                          ))}
-                          {option.styleMapping.length > 3 && (
-                            <View style={styles.styleTag}>
-                              <Text style={styles.styleTagText}>
-                                +{option.styleMapping.length - 3}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
-                      
                       {/* Indicador de selección */}
                       {isSelected && (
                         <View style={styles.subcategorySelectedBadge}>
                           <Text style={styles.subcategorySelectedBadgeText}>✓</Text>
                         </View>
                       )}
-                    </View>
-                    
-                    {/* Efecto de brillo cuando está seleccionado */}
-                    {isSelected && <View style={styles.subcategorySparkleEffect} />}
                   </TouchableOpacity>
                 </Animated.View>
               );
             })}
           </View>
 
-          {/* Información sobre la selección basada en puntuaciones */}
-          {categoryConfig.selectionType === 'multiple' && (
-            <View style={styles.styleScoreInfo}>
-              <Text style={styles.styleScoreInfoTitle}>
-                ✨ Opciones recomendadas para ti
-              </Text>
-              <Text style={styles.styleScoreInfoText}>
-                {currentCategory === 'capaExterior' 
-                  ? 'Estas opciones de capa exterior se seleccionaron basándose en tus estilos favoritos, priorizando las que mejor coinciden con tu perfil y evitando duplicaciones.'
-                  : 'Estas opciones se seleccionaron basándose en tus respuestas anteriores y las puntuaciones de tus estilos favoritos.'
-                }
-              </Text>
-            </View>
-          )}
 
-          {/* Resumen de selecciones */}
-          {currentSelections.length > 0 && (
-            <View style={styles.subcategorySelectionSummary}>
-              <Text style={styles.subcategorySelectionSummaryTitle}>
-                Tu selección actual:
-              </Text>
-              <View style={styles.subcategorySelectionList}>
-                {currentSelections.map((selectionId, index) => {
-                  const option = availableOptions.find(opt => opt.id === selectionId);
-                  if (!option) return null;
-                  
-                  return (
-                    <View key={selectionId} style={styles.subcategorySelectionItem}>
-                      <View style={styles.subcategorySelectionNumber}>
-                        <Text style={styles.subcategorySelectionNumberText}>{index + 1}</Text>
-                      </View>
-                      <Text style={styles.subcategorySelectionText}>{option.displayName}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* Instrucciones */}
-          <View style={styles.subcategoryInstructionsContainer}>
-            <Text style={styles.subcategoryInstructionsText}>
-              {categoryConfig.selectionType === 'single' 
-                ? 'Toca la opción que más te guste'
-                : 'Toca las opciones que más te gusten (máximo 3)'
-              }
-            </Text>
-            <Text style={styles.subcategoryInstructionsSubtext}>
-              Puedes cambiar tu selección tocando de nuevo
-            </Text>
-          </View>
         </ScrollView>
 
         {/* Botón siguiente */}
@@ -1784,15 +1674,7 @@ const styles = StyleSheet.create({
   finishButtonTextDisabled: {
     color: '#999',
   },
-  subcategorySparkleEffect: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    borderRadius: 20,
-  },
+
   subcategoryQuestionContainer: {
     alignItems: 'center',
     marginVertical: 20,
@@ -1861,15 +1743,12 @@ const styles = StyleSheet.create({
     color: '#4D6F62',
     fontStyle: 'italic',
   },
-  subcategoryOptionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  subcategoryOptionsList: {
     marginTop: 30,
     gap: 15,
   },
   subcategoryOptionCard: {
-    width: (width - 70) / 2,
+    width: '100%',
     backgroundColor: '#fff',
     borderRadius: 20,
     shadowColor: '#000',
@@ -1897,74 +1776,39 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   subcategoryOptionContent: {
-    padding: 15,
+    flexDirection: 'row',
+    padding: 20,
     alignItems: 'center',
     width: '100%',
   },
   subcategoryOptionImageContainer: {
-    width: 120,
-    height: 120,
+    width: 80,
+    height: 80,
     borderRadius: 15,
     overflow: 'hidden',
-    marginBottom: 15,
+    marginRight: 20,
     position: 'relative',
   },
   subcategoryOptionImage: {
     width: '100%',
     height: '100%',
   },
-  subcategoryOptionImageOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  subcategoryOptionInfo: {
-    alignItems: 'center',
-    position: 'relative',
-    width: '100%',
-  },
+
   subcategoryOptionName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#333',
-    textAlign: 'center',
+    flex: 1,
   },
   subcategoryOptionNameSelected: {
     color: '#7A142C',
   },
-  styleTagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  styleTag: {
-    backgroundColor: '#E8F4FD',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginHorizontal: 2,
-    marginVertical: 1,
-    borderWidth: 1,
-    borderColor: '#4D6F62',
-  },
-  styleTagText: {
-    fontSize: 10,
-    color: '#4D6F62',
-    fontWeight: '600',
-  },
+
   subcategorySelectedBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
     backgroundColor: '#7A142C',
-    width: 25,
-    height: 25,
-    borderRadius: 12.5,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1973,93 +1817,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  styleScoreInfo: {
-    marginTop: 30,
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FAA6B5',
-  },
-  styleScoreInfoTitle: {
-    fontSize: 18,
-    color: '#7A142C',
-    textAlign: 'center',
-    fontWeight: '600',
-    marginBottom: 15,
-  },
-  styleScoreInfoText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  subcategorySelectionSummary: {
-    marginTop: 30,
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FAA6B5',
-  },
-  subcategorySelectionSummaryTitle: {
-    fontSize: 18,
-    color: '#7A142C',
-    textAlign: 'center',
-    fontWeight: '600',
-    marginBottom: 15,
-  },
-  subcategorySelectionList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  subcategorySelectionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  subcategorySelectionNumber: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#7A142C',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  subcategorySelectionNumberText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  subcategorySelectionText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-  },
-  subcategoryInstructionsContainer: {
-    marginTop: 30,
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FAA6B5',
-  },
-  subcategoryInstructionsText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    fontWeight: '500',
-    marginBottom: 5,
-  },
-  subcategoryInstructionsSubtext: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
+
   subcategoryNextButton: {
     backgroundColor: '#7A142C',
     paddingVertical: 18,

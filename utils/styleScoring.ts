@@ -15,7 +15,7 @@ export const getFilteredTopStyles = (
     options: StyleFilterOptions = {}
 ): StyleScore[] => {
     const {
-        minScore = 3,
+        minScore = 5, // Ajustado para sistema de puntos (mínimo 5 puntos en lugar de 3/5)
         maxResults = 5,
         excludeStyles = [],
         includeOnlyStyles = []
@@ -61,10 +61,10 @@ export const getStylesByScoreRange = (
  */
 export const categorizeStylesByPreference = (styleScores: StyleScore[]) => {
     return {
-        loved: styleScores.filter(style => style.averageScore >= 4.5), // Me encanta
-        liked: styleScores.filter(style => style.averageScore >= 3.5 && style.averageScore < 4.5), // Me gusta mucho
-        neutral: styleScores.filter(style => style.averageScore >= 2.5 && style.averageScore < 3.5), // Me gusta
-        disliked: styleScores.filter(style => style.averageScore < 2.5) // No me gusta
+        loved: styleScores.filter(style => style.averageScore >= 8), // Me encanta (8+ puntos)
+        liked: styleScores.filter(style => style.averageScore >= 6 && style.averageScore < 8), // Me gusta mucho (6-7 puntos)
+        neutral: styleScores.filter(style => style.averageScore >= 4 && style.averageScore < 6), // Me gusta (4-5 puntos)
+        disliked: styleScores.filter(style => style.averageScore < 4) // No me gusta (menos de 4 puntos)
     };
 };
 
@@ -153,15 +153,16 @@ export interface BrandsByStyle {
 }
 
 export const STYLE_BRANDS_MAP: BrandsByStyle = {
-    'Caye +20': ['Zara', 'Massimo Dutti', 'Mango', 'Scalpers', 'Sezane', 'Silbon'],
-    'Caye -20': ['Renatta', 'Nicoli', 'Mango teen', 'NOON', 'The are', 'Zara'],
-    'Pija': ['Zara', 'Mango', 'Silbon', 'Asos', 'Stradivarius', 'H&M'],
-    'Básica': ['Zara', 'Pull & Bear', 'Ese o Ese', 'Parfois', 'H&M', 'Asos'],
-    'Formal': ['Zara', 'Mango', 'Massimo Dutti', 'NA-KD', 'Sezane', 'Scalpers'],
-    'Sexy': ['Zara', 'Bershka', 'Stradivarius', 'House of CB', 'Asos', 'NA-KD'],
-    'Boho': ['Zara', 'Parfois', 'Sezane', 'Asos', 'H&M', 'Pull & Bear'],
-    'M-ST': ['Pull & Bear', 'Bershka', 'NUDE P', 'Urban Outfitter', 'H&M', 'Asos'],
-    'M-Trendy': ['Zara', 'Mango', 'Pull & Bear', 'Bershka', 'Stradivarius', 'Asos', 'H&M', 'Urban Outfitter', 'Parfois', 'Sezane', 'Massimo Dutti', 'Scalpers', 'Silbon', 'Renatta', 'Nicoli', 'NOON', 'NA-KD', 'House of CB', 'Ese o Ese', 'Mango teen', 'The are', 'NUDE P']
+    // Nombres originales del Bloque 1
+    'Básica': ['Zara', 'Pull & Bear', 'Eseoese', 'H&M', 'Asos', 'Mango'],
+    'Boho': ['Zara', 'Sézane', 'Asos', 'H&M', 'Pull & Bear', 'Urban Outfitter'],
+    'Cayetana -20': ['Zara', 'Massimo Dutti', 'Mango', 'Scalpers', 'Sézane', 'Renatta & Go', 'Nicoli', 'Noon'],
+    'Cayetana +20': ['Zara', 'Massimo Dutti', 'Mango', 'Scalpers', 'Sézane', 'Renatta & Go', 'Nicoli', 'Noon'],
+    'Formal Clásica': ['Zara', 'Mango', 'Massimo Dutti', 'Sézane', 'Scalpers', 'Asos'],
+    'Moderna Trendy': ['Zara', 'Mango', 'Pull & Bear', 'Bershka', 'Stradivarius', 'Asos', 'H&M', 'Urban Outfitter', 'Sézane', 'Massimo Dutti', 'Scalpers', 'Renatta & Go', 'Nicoli', 'Noon', 'Eseoese'],
+    'Pija': ['Zara', 'Mango', 'Asos', 'Stradivarius', 'H&M', 'Ralph Lauren'],
+    'Sexy': ['Zara', 'Bershka', 'Stradivarius', 'Asos', 'H&M', 'Mango'],
+    'ST': ['Pull & Bear', 'Bershka', 'Urban Outfitter', 'H&M', 'Asos', 'Stradivarius']
 };
 
 /**

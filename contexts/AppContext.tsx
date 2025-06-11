@@ -38,7 +38,7 @@ export interface StyleScore {
   styleName: string;
   totalScore: number;
   responseCount: number;
-  averageScore: number;
+  averageScore: number; // Ahora representa la suma total de puntos, no el promedio
 }
 
 export interface LookPriorities {
@@ -94,13 +94,16 @@ const initialState: AppState = {
   isOnboardingCompleted: false,
 };
 
-// Función para calcular puntuaciones por estilo
+// Función para calcular puntuaciones por estilo (suma directa, no promedio)
 const calculateStyleScores = (responses: QuestionnaireResponse[]): StyleScore[] => {
   const scoreMap = new Map<string, { total: number; count: number }>();
   
   responses.forEach(response => {
-    const current = scoreMap.get(response.styleName) || { total: 0, count: 0 };
-    scoreMap.set(response.styleName, {
+    // Usar directamente el nombre del estilo (sin normalizar)
+    const styleName = response.styleName;
+    
+    const current = scoreMap.get(styleName) || { total: 0, count: 0 };
+    scoreMap.set(styleName, {
       total: current.total + response.response,
       count: current.count + 1
     });
@@ -110,7 +113,7 @@ const calculateStyleScores = (responses: QuestionnaireResponse[]): StyleScore[] 
     styleName,
     totalScore: total,
     responseCount: count,
-    averageScore: Number((total / count).toFixed(2))
+    averageScore: total // Ahora averageScore es la suma total, no el promedio
   })).sort((a, b) => b.averageScore - a.averageScore);
 };
 
@@ -269,4 +272,36 @@ export const getStyleByName = (styleScores: StyleScore[], styleName: string): St
 
 export const getStyleRanking = (styleScores: StyleScore[]): StyleScore[] => {
   return [...styleScores].sort((a, b) => b.averageScore - a.averageScore);
+};
+
+// Helper functions para verificar progreso de bloques
+export const getBlockProgress = (state: AppState) => {
+  const block1Complete = state.styleScores.length > 0 && state.styleScores.some(s => s.averageScore >= 3); // Mínimo 3 puntos
+  const block2Complete = state.questionnaireResponses.some(r => r.questionId > 2000);
+  const block3Complete = state.unifiedBrandResponse !== null && state.lookPriorities !== null;
+  
+  return {
+    block1Complete,
+    block2Complete, 
+    block3Complete,
+    currentBlock: state.currentQuestionnaireBlock,
+    overallProgress: block1Complete && block2Complete && block3Complete
+  };
+};
+
+export const getStyleScoresSummary = (styleScores: StyleScore[]) => {
+  const topStyles = styleScores
+    .filter(style => style.averageScore >= 5) // Ajustado para sistema de puntos
+    .slice(0, 3);
+    
+  const summary = {
+    totalStyles: styleScores.length,
+    topStylesCount: topStyles.length,
+    topStyles: topStyles,
+    averageScore: styleScores.length > 0 
+      ? Number((styleScores.reduce((sum, style) => sum + style.averageScore, 0) / styleScores.length).toFixed(1))
+      : 0
+  };
+  
+  return summary;
 }; 

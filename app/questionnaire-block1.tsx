@@ -140,15 +140,21 @@ export default function QuestionnaireBlock1Screen() {
     });
 
     if (isLastQuestion) {
-      // Marcar onboarding como completado
-      dispatch({ type: 'COMPLETE_ONBOARDING' });
+      // Actualizar bloque actual y marcar progreso
+      dispatch({ type: 'SET_CURRENT_BLOCK', payload: 2 });
       
       const topStylesMessage = getTopStylesText();
       
       showAlert(
         'Bloque 1 Completado',
-        `¡Has completado el primer bloque del cuestionario! Tu perfil de estilo está listo.\n\n${topStylesMessage}`,
+        `¡Excelente! Has completado el primer bloque del cuestionario.\n\n${topStylesMessage}\n\n¿Quieres continuar con la selección de outfits por ocasión?`,
         [
+          {
+            text: 'Continuar al Bloque 2',
+            onPress: () => {
+              router.push('./questionnaire-block2');
+            },
+          },
           {
             text: 'Ver mi perfil',
             onPress: () => {
