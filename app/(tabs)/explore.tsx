@@ -1,113 +1,116 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
+import CustomTabBar from '@/components/dashboard/CustomTabBar';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+export default function ArmarioScreen() {
+  const [fontsLoaded] = useFonts({
+    'Castio-Regular': require('../../assets/fonts/Castio-Regular.ttf'),
+  });
 
-export default function TabTwoScreen() {
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explorar</ThemedText>
-      </ThemedView>
-      <ThemedText>Esta app incluye código de ejemplo para ayudarte a comenzar.</ThemedText>
-      <Collapsible title="Enrutamiento basado en archivos">
-        <ThemedText>
-          Esta app tiene dos pantallas:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> y{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          El archivo de diseño en <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          configura el navegador de pestañas.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Aprende más</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Soporte para Android, iOS y web">
-        <ThemedText>
-          Puedes abrir este proyecto en Android, iOS y web. Para abrir la versión web, presiona{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> en la terminal que ejecuta este proyecto.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Imágenes">
-        <ThemedText>
-          Para imágenes estáticas, puedes usar los sufijos <ThemedText type="defaultSemiBold">@2x</ThemedText> y{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> para proporcionar archivos para
-          diferentes densidades de pantalla
-        </ThemedText>
-        <Image 
-          source={require('@/assets/images/Images/Logo_beige.png')} 
-          style={{ alignSelf: 'center', width: 100, height: 100, margin: 10 }} 
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Aprende más</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Fuentes personalizadas">
-        <ThemedText>
-          Abre <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> para ver cómo cargar{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            fuentes personalizadas como esta.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Aprende más</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Componentes de modo claro y oscuro">
-        <ThemedText>
-          Esta plantilla tiene soporte para modo claro y oscuro. El hook{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> te permite inspeccionar
-          cuál es el esquema de color actual del usuario, para que puedas ajustar los colores de la UI en consecuencia.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Aprende más</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animaciones">
-        <ThemedText>
-          Esta plantilla incluye un ejemplo de un componente animado. El componente{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> usa
-          la poderosa librería <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          para crear una animación de mano saludando.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              El componente <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              proporciona un efecto de paralaje para la imagen del encabezado.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <MaterialCommunityIcons 
+            name="hanger" 
+            size={48} 
+            color="#7A142C"
+          />
+          <Text style={styles.headerTitle}>Mi Armario</Text>
+          <Text style={styles.headerSubtitle}>
+            Organiza y gestiona tu colección de ropa
+          </Text>
+        </View>
+
+        {/* Contenido temporal */}
+        <View style={styles.contentContainer}>
+          <View style={styles.placeholderCard}>
+            <MaterialCommunityIcons 
+              name="hanger" 
+              size={80} 
+              color="rgba(122, 20, 44, 0.6)"
+            />
+            <Text style={styles.placeholderTitle}>
+              Próximamente
+            </Text>
+            <Text style={styles.placeholderText}>
+              Aquí podrás gestionar toda tu ropa, crear outfits y organizar tu armario digital
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+      
+      {/* Footer personalizado */}
+      <CustomTabBar />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: '#FCF6F3',
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 100,
   },
-});
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontFamily: 'Castio-Regular',
+    color: '#7A142C',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 8,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
+  placeholderCard: {
+    backgroundColor: 'rgba(250, 166, 181, 0.1)',
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(122, 20, 44, 0.1)',
+    borderStyle: 'dashed',
+  },
+  placeholderTitle: {
+    fontSize: 24,
+    fontFamily: 'Castio-Regular',
+    color: '#7A142C',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+}); 
