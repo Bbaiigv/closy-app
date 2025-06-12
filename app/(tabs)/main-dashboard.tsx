@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View, Text, Alert, Dimensions } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, Alert, Dimensions, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useAppContext, getBlockProgress } from '@/contexts/AppContext';
@@ -9,6 +9,7 @@ import ChatAssistant from '@/components/dashboard/ChatAssistant';
 import FunctionalityCard from '@/components/dashboard/FunctionalityCard';
 import CustomTabBar from '@/components/dashboard/CustomTabBar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ImageSourcePropType } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -76,13 +77,39 @@ export default function HomeScreen() {
     Alert.alert('¡Próximamente!', 'Esta funcionalidad estará disponible pronto');
   };
 
-  // Contenido placeholder para las tarjetas (se reemplazará con imágenes)
-  const PlaceholderContent = ({ iconName, color }: { iconName: string; color: string }) => (
-    <View style={styles.placeholderContainer}>
-      <MaterialCommunityIcons 
-        name={iconName as any} 
-        size={50} 
-        color={color} 
+  const handlePlanificar = () => {
+    if (!allBlocksComplete) {
+      Alert.alert(
+        'Completa tu perfil',
+        'Termina todos los cuestionarios para planificar tus outfits',
+        [{ text: 'OK', onPress: () => router.push('./questionnaire-block1') }]
+      );
+      return;
+    }
+    // Navegar a la página de calendario cuando esté disponible
+    router.push('./favorites');
+  };
+
+  const handleArmario = () => {
+    if (!allBlocksComplete) {
+      Alert.alert(
+        'Completa tu perfil',
+        'Termina todos los cuestionarios para acceder a tu armario personalizado',
+        [{ text: 'OK', onPress: () => router.push('./questionnaire-block1') }]
+      );
+      return;
+    }
+    // Navegar a la página de armario
+    router.push('./explore');
+  };
+
+  // Componente para mostrar las imágenes
+  const FunctionalityImage = ({ imagePath }: { imagePath: ImageSourcePropType }) => (
+    <View style={styles.imageContainer}>
+      <Image 
+        source={imagePath} 
+        style={styles.functionalityImage}
+        resizeMode="contain"
       />
     </View>
   );
@@ -106,7 +133,7 @@ export default function HomeScreen() {
           <Text style={styles.functionalitiesTitle}>Funcionalidades</Text>
         </View>
 
-        {/* Grid de funcionalidades 2x2 */}
+        {/* Grid de funcionalidades 2x3 */}
         <View style={styles.functionalitiesGrid}>
           {/* Primera fila */}
           <View style={styles.functionalitiesRow}>
@@ -116,7 +143,7 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleInspirarte}
             >
-              <PlaceholderContent iconName="lightbulb-outline" color="rgba(255,255,255,0.8)" />
+              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-inspirarte.png')} />
             </FunctionalityCard>
 
             <FunctionalityCard
@@ -125,7 +152,7 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleComprar}
             >
-              <PlaceholderContent iconName="shopping" color="rgba(255,255,255,0.8)" />
+              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-comprar.png')} />
             </FunctionalityCard>
           </View>
 
@@ -137,7 +164,7 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleAsesorarte}
             >
-              <PlaceholderContent iconName="account-tie" color="rgba(255,255,255,0.8)" />
+              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-asesorarte.png')} />
             </FunctionalityCard>
 
             <FunctionalityCard
@@ -146,7 +173,28 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleCombinar}
             >
-              <PlaceholderContent iconName="palette" color="rgba(255,255,255,0.8)" />
+              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-combinar.png')} />
+            </FunctionalityCard>
+          </View>
+
+          {/* Tercera fila */}
+          <View style={styles.functionalitiesRow}>
+            <FunctionalityCard
+              title="Planificar"
+              iconName="calendar"
+              backgroundColor="#FAA6B5"
+              onPress={handlePlanificar}
+            >
+              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-planificar.png')} />
+            </FunctionalityCard>
+
+            <FunctionalityCard
+              title="Armario"
+              iconName="wardrobe"
+              backgroundColor="#FAA6B5"
+              onPress={handleArmario}
+            >
+              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-armario.png')} />
             </FunctionalityCard>
           </View>
         </View>
@@ -198,12 +246,22 @@ const styles = StyleSheet.create({
   functionalitiesRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 15,
   },
-  placeholderContainer: {
+  imageContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
+    borderRadius: 15,
+    overflow: 'hidden',
+    padding: 8,
+    minHeight: 120,
+  },
+  functionalityImage: {
+    width: '100%',
+    height: '100%',
+    minHeight: 100,
+    borderRadius: 12,
   },
   progressIndicator: {
     marginHorizontal: 20,

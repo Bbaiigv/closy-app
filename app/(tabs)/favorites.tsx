@@ -1,11 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Calendar, DateData } from 'react-native-calendars';
+import { FontAwesome } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import CustomTabBar from '@/components/dashboard/CustomTabBar';
 
 export default function CalendarScreen() {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  
   const [fontsLoaded] = useFonts({
     'Castio-Regular': require('../../assets/fonts/Castio-Regular.ttf'),
   });
@@ -18,26 +21,30 @@ export default function CalendarScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" backgroundColor="#FCF6F3" />
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Calendar</Text>
-          <Text style={styles.subtitle}>Planifica tus outfits y eventos</Text>
-        </View>
+      <Text style={styles.title}>Planificación</Text>
 
-        {/* Contenido temporal */}
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons 
-            name="calendar-outline" 
-            size={80} 
-            color="#FAA6B5" 
-          />
-          <Text style={styles.emptyTitle}>¡Próximamente!</Text>
-          <Text style={styles.emptyMessage}>
-            Aquí podrás planificar tus outfits según eventos y fechas especiales
-          </Text>
+      <Calendar
+        onDayPress={(day: DateData) => setSelectedDate(day.dateString)}
+        markedDates={{
+          [selectedDate || '']: {
+            selected: true,
+            selectedColor: '#FAA6B5',
+          },
+        }}
+        theme={{
+          todayTextColor: '#FAA6B5',
+          arrowColor: '#7A142C',
+        }}
+      />
+
+      {selectedDate && (
+        <View style={styles.bottomBlock}>
+          <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
+          <TouchableOpacity style={styles.plusButton}>
+            <FontAwesome name="plus" size={28} color="#FAA6B5" />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      )}
       
       {/* Footer personalizado */}
       <CustomTabBar />
@@ -45,50 +52,60 @@ export default function CalendarScreen() {
   );
 }
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FCF6F3',
   },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 100, // Espacio para el tab bar
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 30,
-    alignItems: 'center',
-  },
   title: {
-    fontSize: 28,
-    fontFamily: 'Castio-Regular',
-    color: '#7A142C',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
-  },
-  emptyTitle: {
     fontSize: 24,
-    fontFamily: 'Castio-Regular',
-    color: '#7A142C',
-    marginTop: 20,
-    marginBottom: 15,
-  },
-  emptyMessage: {
-    fontSize: 16,
-    color: '#666',
+    fontWeight: 'bold',
+    color: '#1E1E1E',
     textAlign: 'center',
-    lineHeight: 24,
+    marginBottom: 20,
+    marginTop: 60,
+    fontFamily: 'Castio-Regular',
+  },
+  bottomBlock: {
+    marginTop: 30,
+    marginHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 100, // Espacio para el tab bar
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 20,
+  },
+  plusButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderColor: '#FAA6B5',
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }); 
