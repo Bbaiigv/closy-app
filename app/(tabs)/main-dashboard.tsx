@@ -78,41 +78,14 @@ export default function HomeScreen() {
   };
 
   const handlePlanificar = () => {
-    if (!allBlocksComplete) {
-      Alert.alert(
-        'Completa tu perfil',
-        'Termina todos los cuestionarios para planificar tus outfits',
-        [{ text: 'OK', onPress: () => router.push('./questionnaire-block1') }]
-      );
-      return;
-    }
-    // Navegar a la página de calendario cuando esté disponible
-    router.push('./favorites');
+    router.push('/(tabs)/calendar');
   };
 
   const handleArmario = () => {
-    if (!allBlocksComplete) {
-      Alert.alert(
-        'Completa tu perfil',
-        'Termina todos los cuestionarios para acceder a tu armario personalizado',
-        [{ text: 'OK', onPress: () => router.push('./questionnaire-block1') }]
-      );
-      return;
-    }
-    // Navegar a la página de armario
-    router.push('./explore');
+    router.push('/(tabs)/armario');
   };
 
-  // Componente para mostrar las imágenes
-  const FunctionalityImage = ({ imagePath }: { imagePath: ImageSourcePropType }) => (
-    <View style={styles.imageContainer}>
-      <Image 
-        source={imagePath} 
-        style={styles.functionalityImage}
-        resizeMode="contain"
-      />
-    </View>
-  );
+
 
   return (
     <View style={styles.container}>
@@ -143,7 +116,11 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleInspirarte}
             >
-              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-inspirarte.png')} />
+              <Image 
+                source={require('@/assets/images/MainDashboard/inspirarte.png')} 
+                style={styles.functionalityImage}
+                resizeMode="cover"
+              />
             </FunctionalityCard>
 
             <FunctionalityCard
@@ -152,7 +129,11 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleComprar}
             >
-              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-comprar.png')} />
+              <Image 
+                source={require('@/assets/images/MainDashboard/comprar.png')} 
+                style={styles.functionalityImage}
+                resizeMode="cover"
+              />
             </FunctionalityCard>
           </View>
 
@@ -164,7 +145,11 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleAsesorarte}
             >
-              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-asesorarte.png')} />
+              <Image 
+                source={require('@/assets/images/MainDashboard/asesorarte.png')} 
+                style={styles.functionalityImage}
+                resizeMode="cover"
+              />
             </FunctionalityCard>
 
             <FunctionalityCard
@@ -173,7 +158,11 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handleCombinar}
             >
-              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-combinar.png')} />
+              <Image 
+                source={require('@/assets/images/MainDashboard/combinar.png')} 
+                style={styles.functionalityImage}
+                resizeMode="cover"
+              />
             </FunctionalityCard>
           </View>
 
@@ -185,16 +174,24 @@ export default function HomeScreen() {
               backgroundColor="#FAA6B5"
               onPress={handlePlanificar}
             >
-              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-planificar.png')} />
+              <Image 
+                source={require('@/assets/images/MainDashboard/planificar.png')} 
+                style={styles.functionalityImage}
+                resizeMode="cover"
+              />
             </FunctionalityCard>
 
             <FunctionalityCard
               title="Armario"
-              iconName="wardrobe"
+              iconName="hanger"
               backgroundColor="#FAA6B5"
               onPress={handleArmario}
             >
-              <FunctionalityImage imagePath={require('../../assets/images/pagina_home/h-armario.png')} />
+              <Image 
+                source={require('@/assets/images/MainDashboard/armario.png')} 
+                style={styles.functionalityImage}
+                resizeMode="cover"
+              />
             </FunctionalityCard>
           </View>
         </View>
@@ -248,20 +245,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 15,
   },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 15,
-    overflow: 'hidden',
-    padding: 8,
-    minHeight: 120,
-  },
   functionalityImage: {
     width: '100%',
     height: '100%',
-    minHeight: 100,
-    borderRadius: 12,
+    borderRadius: 15,
   },
   progressIndicator: {
     marginHorizontal: 20,

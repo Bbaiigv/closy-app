@@ -14,11 +14,11 @@ interface TabItem {
 
 const tabs: TabItem[] = [
   {
-    name: 'explore',
+    name: 'armario',
     title: 'Armario',
     icon: 'hanger',
     iconFocused: 'hanger',
-    path: '/(tabs)/explore',
+    path: '/(tabs)/armario',
   },
   {
     name: 'index',
@@ -28,11 +28,11 @@ const tabs: TabItem[] = [
     path: '/(tabs)/',
   },
   {
-    name: 'favorites',
+    name: 'calendar',
     title: 'Calendar',
     icon: 'calendar-outline',
     iconFocused: 'calendar',
-    path: '/(tabs)/favorites',
+    path: '/(tabs)/calendar',
   },
   {
     name: 'profile',
