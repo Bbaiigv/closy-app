@@ -119,7 +119,7 @@ export default function HomeScreen() {
               <Image 
                 source={require('@/assets/images/MainDashboard/inspirarte.png')} 
                 style={styles.functionalityImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </FunctionalityCard>
 
@@ -132,7 +132,7 @@ export default function HomeScreen() {
               <Image 
                 source={require('@/assets/images/MainDashboard/comprar.png')} 
                 style={styles.functionalityImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </FunctionalityCard>
           </View>
@@ -148,7 +148,7 @@ export default function HomeScreen() {
               <Image 
                 source={require('@/assets/images/MainDashboard/asesorarte.png')} 
                 style={styles.functionalityImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </FunctionalityCard>
 
@@ -161,7 +161,7 @@ export default function HomeScreen() {
               <Image 
                 source={require('@/assets/images/MainDashboard/combinar.png')} 
                 style={styles.functionalityImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </FunctionalityCard>
           </View>
@@ -177,7 +177,7 @@ export default function HomeScreen() {
               <Image 
                 source={require('@/assets/images/MainDashboard/planificar.png')} 
                 style={styles.functionalityImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </FunctionalityCard>
 
@@ -190,7 +190,7 @@ export default function HomeScreen() {
               <Image 
                 source={require('@/assets/images/MainDashboard/armario.png')} 
                 style={styles.functionalityImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </FunctionalityCard>
           </View>
@@ -231,10 +231,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   functionalitiesTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontFamily: 'Castio-Regular',
-    color: '#7A142C',
-    fontWeight: '600',
+    color: '#828282',
+    fontWeight: '500',
   },
   functionalitiesGrid: {
     paddingHorizontal: 20,

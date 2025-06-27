@@ -51,6 +51,9 @@ export default function RootLayout() {
           <Stack.Screen name="questionnaire-block1" />
           <Stack.Screen name="questionnaire-block2" />
           <Stack.Screen name="questionnaire-block3" />
+          <Stack.Screen name="guardados" />
+          <Stack.Screen name="carpeta-detalle" />
+          <Stack.Screen name="wishlist" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="+not-found" />
         </Stack>

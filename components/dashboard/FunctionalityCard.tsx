@@ -34,6 +34,11 @@ export default function FunctionalityCard({
       onPress={onPress}
       activeOpacity={0.8}
     >
+      {/* Título en esquina superior derecha */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>{title}</Text>
+      </View>
+
       {/* Contenido personalizado (imagen/placeholder) */}
       <View style={styles.contentArea}>
         {children || (
@@ -46,11 +51,6 @@ export default function FunctionalityCard({
           </View>
         )}
       </View>
-
-      {/* Título */}
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>{title}</Text>
-      </View>
     </TouchableOpacity>
   );
 }
@@ -58,40 +58,33 @@ export default function FunctionalityCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 16,
     height: 160,
     marginHorizontal: 8,
     marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4.65,
-    elevation: 6,
     overflow: 'hidden',
   },
   contentArea: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 15,
+    padding: 8,
   },
   placeholderContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   titleContainer: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    alignItems: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
+    backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: 'Castio-Regular',
-    color: '#333',
-    fontWeight: '600',
+    color: 'white',
+    fontWeight: 'bold',
   },
 }); 

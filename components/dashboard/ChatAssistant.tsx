@@ -34,29 +34,27 @@ export default function ChatAssistant() {
       .map(style => style.styleName);
 
     if (topStyles.length > 0) {
-      return `¡Hola! He visto que te encantan los estilos ${topStyles.join(' y ')}. ¿En qué puedo ayudarte hoy?`;
+      return `¡Hola! He visto que te encantan los estilos ${topStyles.join(' y ')}...`;
     }
-    return '¿Con qué puedo ayudarte hoy?';
+    return '¡Hola! He visto que te encantan...';
   };
 
   return (
     <View style={styles.container}>
-      {/* Avatar del asistente */}
-      <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
+      {/* Header con avatar y mensaje */}
+      <View style={styles.chatHeader}>
+        <View style={styles.avatarContainer}>
           <MaterialCommunityIcons 
-            name="account-circle" 
-            size={50} 
-            color="#4D6F62" 
+            name="account" 
+            size={35} 
+            color="white" 
           />
         </View>
-      </View>
-
-      {/* Mensaje de bienvenida */}
-      <View style={styles.messageContainer}>
-        <Text style={styles.welcomeMessage}>
-          {getPersonalizedWelcomeMessage()}
-        </Text>
+        <View style={styles.messageContainer}>
+          <Text style={styles.welcomeMessage}>
+            {getPersonalizedWelcomeMessage()}
+          </Text>
+        </View>
       </View>
 
       {/* Input de mensaje */}
@@ -78,8 +76,8 @@ export default function ChatAssistant() {
         >
           <MaterialCommunityIcons 
             name="send" 
-            size={24} 
-            color={message.trim() ? "#FCF6F3" : "#ccc"} 
+            size={16} 
+            color="white"
           />
         </TouchableOpacity>
       </View>
@@ -89,11 +87,11 @@ export default function ChatAssistant() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FCF6F3',
+    backgroundColor: '#ffffff',
     marginHorizontal: 20,
     marginVertical: 15,
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -103,53 +101,51 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  avatarContainer: {
-    alignItems: 'flex-start',
-    marginBottom: 15,
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E8F4F1',
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#7A9B8A',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4D6F62',
+    marginRight: 12,
   },
   messageContainer: {
-    marginBottom: 20,
+    flex: 1,
   },
   welcomeMessage: {
     fontSize: 16,
     color: '#333',
     lineHeight: 22,
-    fontFamily: 'System',
+    fontFamily: 'Castio-Regular',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 25,
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    paddingVertical: 5,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
-    paddingVertical: 12,
+    fontSize: 14,
+    paddingVertical: 4,
     color: '#333',
-    fontFamily: 'System',
+    fontFamily: 'Castio-Regular',
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#FAA6B5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 10,
+    marginLeft: 8,
   },
 }); 

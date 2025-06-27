@@ -10,7 +10,15 @@ export default function SplashScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/welcome');
+      // 🚧 MODO DESARROLLO - Saltar directamente a home de tabs
+      const DEVELOPMENT_MODE = true;
+      
+      if (DEVELOPMENT_MODE) {
+        console.log('🚧 DEVELOPMENT_MODE: Saltando splash a tabs directamente');
+        router.push('/(tabs)');
+      } else {
+        router.push('/welcome');
+      }
     }, 3000); // 3 segundos
 
     return () => clearTimeout(timer);

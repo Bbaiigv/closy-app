@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
@@ -17,7 +17,7 @@ export default function ProfileScreen() {
     return null;
   }
 
-  const displayName = state.user?.name || 'Usuario';
+  const displayName = 'Alba García';
 
   return (
     <View style={styles.container}>
@@ -27,10 +27,10 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <MaterialCommunityIcons 
-              name="account-circle" 
-              size={80} 
-              color="#7A142C" 
+            <Image 
+              source={require('../../assets/images/Perfil_usuario/Fotoperfil.png')}
+              style={styles.profileImage}
+              resizeMode="cover"
             />
           </View>
           <Text style={styles.name}>{displayName}</Text>
@@ -49,6 +49,15 @@ export default function ProfileScreen() {
             </Text>
             <Text style={styles.statLabel}>Estilos Favoritos</Text>
           </View>
+        </View>
+
+        {/* Imagen del armario cápsula */}
+        <View style={styles.armarioCapsuleContainer}>
+          <Image 
+            source={require('../../assets/images/Perfil_usuario/armario_capsula.png')}
+            style={styles.armarioCapsuleImage}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Contenido temporal */}
@@ -133,6 +142,15 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  armarioCapsuleContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  armarioCapsuleImage: {
+    width: '100%',
+    aspectRatio: 1.2,
+    borderRadius: 15,
+  },
   comingSoon: {
     flex: 1,
     justifyContent: 'center',
@@ -152,5 +170,10 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
 }); 
